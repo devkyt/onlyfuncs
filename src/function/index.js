@@ -1,4 +1,3 @@
-
 // identity: A -> A
 export const identity = (value) => value;
 

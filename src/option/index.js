@@ -1,4 +1,3 @@
-
 export const some = (value) => ({ type: "some", value });
 
 
