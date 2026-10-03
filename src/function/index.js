@@ -32,4 +32,8 @@ const compose = (...functions) => flow(...functions.reverse());
 const curry2 = (fn) => (x) => (y) => fn(x, y);
 
 
-export { identity, constant, pipe, flow, compose, curry2 };
+// curry3: ...
+const curry3 = (fn) => (x) => (y) => (z) => fn(x, y, z);
+
+
+export { identity, constant, pipe, flow, compose, curry2, curry3 };
