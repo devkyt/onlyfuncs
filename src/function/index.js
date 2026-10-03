@@ -1,14 +1,14 @@
 
 // identity: A -> A
-const identity = (value) => value;
+export const identity = (value) => value;
 
 
 // constant: A -> () -> A
-const constant = (value) => () => value;
+export const constant = (value) => () => value;
 
 
 // pipe: ...
-const pipe = (value, ...functions) => {
+export const pipe = (value, ...functions) => {
     const apply = (value, fn) => {
         if (typeof fn !=='function') {
             throw new TypeError('pipe: expected all arguments to be functions');
@@ -21,19 +21,17 @@ const pipe = (value, ...functions) => {
 }
 
 // flow: ...
-const flow = (...functions) => (value) => pipe(value, ...functions);
+export const flow = (...functions) => (value) => pipe(value, ...functions);
 
 
 // compose: ...
-const compose = (...functions) => flow(...functions.reverse());
+export const compose = (...functions) => flow(...functions.reverse());
 
 
 // curry2: ...
-const curry2 = (fn) => (x) => (y) => fn(x, y);
+export const curry2 = (fn) => (x) => (y) => fn(x, y);
 
 
 // curry3: ...
-const curry3 = (fn) => (x) => (y) => (z) => fn(x, y, z);
+export const curry3 = (fn) => (x) => (y) => (z) => fn(x, y, z);
 
-
-export { identity, constant, pipe, flow, compose, curry2, curry3 };
