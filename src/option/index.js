@@ -7,4 +7,6 @@ const none = { type: "none" };
 
 const isNone = (option) => option.type === "none";
 
-export { some, isSome, none, isNone };
+const fromNullable = (value) => value === null || value === undefined ? none : some(value);
+
+export { some, isSome, none, isNone, fromNullable };
