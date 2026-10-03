@@ -26,3 +26,6 @@ export const flatMap = (transform) => (option) =>
 export const filter = (predicate) => (option) =>
     isSome(option) && predicate(option.value) ? option : none;
 
+
+export const getOrElse = (fallback) => (option) =>
+    isSome(option) ? option.value : fallback();
