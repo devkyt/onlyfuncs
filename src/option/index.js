@@ -28,3 +28,7 @@ export const filter = (predicate) => (option) =>
 
 export const getOrElse = (fallback) => (option) =>
     isSome(option) ? option.value : fallback();
+
+
+export const match = ({ onSome, onNone }) => (option) =>
+    isSome(option) ? onSome(option.value) : onNone();
