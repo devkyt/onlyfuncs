@@ -20,3 +20,7 @@ export const mapError = (transform) => (result) =>
 
 export const flatMap = (transform) => (result) =>
     isOk(result) ? transform(result.value) : result;
+
+
+export const getOrElse = (fallback) => (result) =>
+    isOk(result) ? result.value : fallback(result.error);
