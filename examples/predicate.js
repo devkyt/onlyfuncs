@@ -28,3 +28,15 @@ const activeHeroes = heroes.filter(canAttack);
 
 
 console.log(activeHeroes);
+
+
+const attack = hero => hasStamina(hero) ? { ...hero, stamina: hero.stamina - 5 } : { ...hero, magic: hero.magic - 5 }
+
+
+const actedHeroes = activeHeroes.map(attack);
+
+
+console.log(actedHeroes);
+
+
+console.log(actedHeroes[0] === activeHeroes[0]);
