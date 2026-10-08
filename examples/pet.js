@@ -1,5 +1,5 @@
 import { pipe } from '../src/function/index.js';
-import { fromNullable, map, filter, getOrElse} from '../src/option/index.js';
+import { fromNullable, map, filter, getOrElse } from '../src/option/index.js';
 
 
 const pet = (user) => pipe(user?.pet,
@@ -10,4 +10,4 @@ const pet = (user) => pipe(user?.pet,
 )
 
 
-console.log(pet({ name: "Bawma", pet: " crocodile   "}));
+console.log(pet({ name: "Indiana Jones", pet: " snake   "}));
