@@ -17,7 +17,7 @@ const petOf = (user) => {
 
 
 const pet = (value) => pipe(Result.fromThrowable(() => JSON.parse(value)),
-    Result.mapError((err) => "Invalid JSON"),
+    Result.mapError((_) => "Invalid JSON"),
     Result.flatMap(petOf),
     Result.getOrElse((err) => `Cannot choose a pet: ${err}`)
 )
