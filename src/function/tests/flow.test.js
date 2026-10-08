@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { flow } from '../index.js';
 
 describe("flow", () => {
-    it("creates pipeline applied in order from left to right", () => {
+    it("creates a pipeline that runs from left to right", () => {
         const bigLink = flow(
             value => value.toLowerCase(),
             value => value.trim(),

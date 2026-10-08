@@ -50,7 +50,7 @@ describe("constant", () => {
         assert.strictEqual(constant()(null), undefined);
     })
 
-    it("has independent states", () => {
+    it("keeps separately captured values independent", () => {
         const health = constant("health");
         const stamina = constant("stamina");
 

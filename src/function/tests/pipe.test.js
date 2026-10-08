@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { pipe } from '../index.js';
 
 describe("pipe", () => {
-    it("applied in order from left to right", () => {
+    it("runs steps from left to right", () => {
         const bigLink = pipe(
             "  link ",
             value => value.toLowerCase(),

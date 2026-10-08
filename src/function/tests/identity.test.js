@@ -18,7 +18,7 @@ describe("identity", () => {
         assert.strictEqual(identity(arr), arr);
     })
 
-    it("return the same value for falsy inputs", () => {
+    it("returns the same value for falsy inputs", () => {
         assert.strictEqual(identity(0), 0);
         assert.strictEqual(identity(""), "");
         assert.strictEqual(identity(false), false);
