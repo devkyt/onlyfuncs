@@ -10,3 +10,9 @@ export const err = (error) => ({ type: "err", error: error });
 export const isErr = (result) => result.type === "err";
 
 
+export const map = (transform) => (result) =>
+    isOk(result) ? ok(transform(result.value)) : result;
+
+
+export const flatMap = (transform) => (result) =>
+    isOk(result) ? transform(result.value) : result;
