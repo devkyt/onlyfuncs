@@ -14,5 +14,9 @@ export const map = (transform) => (result) =>
     isOk(result) ? ok(transform(result.value)) : result;
 
 
+export const mapError = (transform) => (result) =>
+    isErr(result) ? err(transform(result.error)) : result;
+
+
 export const flatMap = (transform) => (result) =>
     isOk(result) ? transform(result.value) : result;
