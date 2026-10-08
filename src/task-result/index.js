@@ -8,10 +8,12 @@ export const ok = (value) => Task.of(Result.ok(value));
 export const err = (error) => Task.of(Result.err(error));
 
 
-export const map = (transform) => (task) => Task.map(Result.map(transform))(task);
+export const map = (transform) => (task) =>
+    Task.map(Result.map(transform))(task);
 
 
-export const mapError = (transform) => (task) => Task.map(Result.mapError(transform))(task);
+export const mapError = (transform) => (task) =>
+    Task.map(Result.mapError(transform))(task);
 
 
 export const flatMap = (transform) => (task) => {
@@ -22,7 +24,18 @@ export const flatMap = (transform) => (task) => {
 };
 
 
-export const getOrElse = (fallback) => (task) => Task.map(Result.getOrElse(fallback))(task);
+export const getOrElse = (fallback) => (task) =>
+    Task.map(Result.getOrElse(fallback))(task);
 
 
+export const match = ({ onOk, onErr }) => (task) =>
+    Task.map(Result.match({ onOk, onErr }))(task);
 
+
+export const fromThrowable = (func) => async() => {
+    try {
+        return Result.ok(await func());
+    } catch (error) {
+        return Result.err(error);
+    }
+}
