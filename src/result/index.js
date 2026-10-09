@@ -33,7 +33,6 @@ export const orElse = (fallback) => (result) =>
     isErr(result) ? fallback(result.error) : result;
 
 
-
 export const match = ({ onOk, onErr }) => (result) =>
     isOk(result) ? onOk(result.value) : onErr(result.error);
 
@@ -49,3 +48,19 @@ export const fromThrowable = (func) => {
 
 export const fromOption = (onNone) => (option) =>
     Option.isSome(option) ? ok(option.value) : err(onNone());
+
+
+
+export const all = (results) => {
+    const values = [];
+
+    for (let result of results) {
+        if (isErr(result)) {
+            return result;
+        }
+
+        values.push(result.value);
+    }
+
+    return ok(values);
+}
