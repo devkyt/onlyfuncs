@@ -54,7 +54,7 @@ export const fromOption = (onNone) => (option) =>
 export const all = (results) => {
     const values = [];
 
-    for (let result of results) {
+    for (const result of results) {
         if (isErr(result)) {
             return result;
         }

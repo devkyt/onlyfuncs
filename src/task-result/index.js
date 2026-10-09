@@ -56,3 +56,18 @@ export const fromResult = (result) => Task.of(result);
 export const fromTask = (task) => Task.map(Result.ok)(task);
 
 
+export const all = (tasks) => async () => {
+    const values = [];
+
+    for (const task of tasks) {
+        const res = await task();
+
+        if (Result.isErr(res)) {
+            return res;
+        }
+
+        values.push(res.value);
+    }
+
+    return Result.ok(values);
+}
