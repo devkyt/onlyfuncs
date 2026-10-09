@@ -28,6 +28,15 @@ export const getOrElse = (fallback) => (task) =>
     Task.map(Result.getOrElse(fallback))(task);
 
 
+
+export const orElse = (fallback) => (task) => {
+    const callback = (result) =>
+        Result.isErr(result) ? fallback(result.error) : Task.of(result);
+
+    return Task.flatMap(callback)(task);
+}
+
+
 export const match = ({ onOk, onErr }) => (task) =>
     Task.map(Result.match({ onOk, onErr }))(task);
 

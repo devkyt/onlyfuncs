@@ -26,6 +26,11 @@ export const getOrElse = (fallback) => (result) =>
     isOk(result) ? result.value : fallback(result.error);
 
 
+export const orElse = (fallback) => (result) =>
+    isErr(result) ? fallback(result.error) : result;
+
+
+
 export const match = ({ onOk, onErr }) => (result) =>
     isOk(result) ? onOk(result.value) : onErr(result.error);
 
