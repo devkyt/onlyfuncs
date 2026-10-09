@@ -1,3 +1,6 @@
+import * as Option from "../option/index.js";
+
+
 export const ok = (value) => ({ type: "ok", value: value });
 
 
@@ -42,3 +45,7 @@ export const fromThrowable = (func) => {
         return err(error);
     }
 }
+
+
+export const fromOption = (onNone) => (option) =>
+    Option.isSome(option) ? ok(option.value) : err(onNone());

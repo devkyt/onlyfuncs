@@ -50,4 +50,9 @@ export const fromThrowable = (func) => async() => {
 }
 
 
-export const fromResult  = (result) => Task.of(result);
+export const fromResult = (result) => Task.of(result);
+
+
+export const fromTask = (task) => Task.map(Result.ok)(task);
+
+
