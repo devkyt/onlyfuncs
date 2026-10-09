@@ -39,3 +39,6 @@ export const fromThrowable = (func) => async() => {
         return Result.err(error);
     }
 }
+
+
+export const fromResult  = (result) => Task.of(result);
