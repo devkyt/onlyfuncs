@@ -83,3 +83,6 @@ export const traverse = (transform) => (values) => {
 }
 
 
+export const flatten = (result) =>
+    isOk(result) ? result.value : result;
+
