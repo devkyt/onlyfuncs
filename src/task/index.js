@@ -28,3 +28,9 @@ export const traverse = (transform) => (values) => async () => {
 export const flatten = (task) => () =>
     task().then((t) => t());
 
+
+export const tap = (effect) => (task) => () =>
+    task().then(t => {
+        effect(t);
+        return t;
+    });
