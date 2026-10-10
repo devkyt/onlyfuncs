@@ -1,5 +1,6 @@
 import * as Task from "../task/index.js";
 import * as Result from "../result/index.js";
+import * as Option from "../option/index.js";
 
 
 export const ok = (value) => Task.of(Result.ok(value));
@@ -118,3 +119,7 @@ export const tapError = (effect) => (task) => () =>
 
         return result;
     });
+
+
+export const fromOption = (onNone) => (option) => async ()=>
+    Result.fromOption(onNone)(option);
