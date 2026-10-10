@@ -107,3 +107,14 @@ export const tap = (effect) => (task) => () =>
 
         return result;
     });
+
+
+
+export const tapError = (effect) => (task) => () =>
+    task().then(result => {
+        if (Result.isErr(result)) {
+            effect(result.error);
+        }
+
+        return result;
+    });
