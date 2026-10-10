@@ -51,3 +51,20 @@ export const all = (options) => {
 
     return some(outputs);
 }
+
+
+export const traverse = (transform) => (values) => {
+    const outputs = []
+
+    for (const value of values) {
+        const option = transform(value);
+
+        if (isNone(option)) {
+            return none;
+        }
+
+        outputs.push(option.value);
+    }
+
+    return some(outputs);
+}
