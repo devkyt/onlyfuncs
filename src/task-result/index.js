@@ -57,17 +57,35 @@ export const fromTask = (task) => Task.map(Result.ok)(task);
 
 
 export const all = (tasks) => async () => {
-    const values = [];
+    const outputs = [];
 
     for (const task of tasks) {
-        const res = await task();
+        const result = await task();
 
-        if (Result.isErr(res)) {
-            return res;
+        if (Result.isErr(result)) {
+            return result;
         }
 
-        values.push(res.value);
+        outputs.push(result.value);
     }
 
-    return Result.ok(values);
+    return Result.ok(outputs);
+}
+
+
+export const traverse = (transform) => (values) => async () => {
+    const outputs = [];
+
+    for (const value of values) {
+        const task = transform(value)
+        const result = await task()
+
+        if (Result.isErr(result)) {
+            return result;
+        }
+
+        outputs.push(result.value);
+    }
+
+    return Result.ok(outputs);
 }
