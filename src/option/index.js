@@ -36,3 +36,18 @@ export const orElse = (fallback) => (option) =>
 
 export const match = ({ onSome, onNone }) => (option) =>
     isSome(option) ? onSome(option.value) : onNone();
+
+
+export const all = (options) => {
+    const outputs = []
+
+    for (const option of options) {
+        if (isNone(option)) {
+            return none;
+        }
+
+        outputs.push(option.value);
+    }
+
+    return some(outputs);
+}
