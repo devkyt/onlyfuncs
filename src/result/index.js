@@ -86,3 +86,20 @@ export const traverse = (transform) => (values) => {
 export const flatten = (result) =>
     isOk(result) ? result.value : result;
 
+
+export const tap = (effect) => (result) => {
+    if (isOk(result)) {
+        effect(result.value);
+    }
+
+    return result;
+}
+
+
+export const tapError = (effect) => (result) => {
+    if (isErr(result)) {
+        effect(result.error);
+    }
+
+    return result;
+}
