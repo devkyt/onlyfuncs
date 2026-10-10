@@ -13,3 +13,13 @@ export const all = (tasks) => async () => {
     const promises = tasks.map((task) => task());
     return Promise.all(promises);
 }
+
+
+export const traverse = (transform) => (values) => async () => {
+    const promises = values.map((value) => {
+        const task = transform(value);
+        return task();
+    });
+
+    return Promise.all(promises);
+}
