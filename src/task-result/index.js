@@ -89,3 +89,11 @@ export const traverse = (transform) => (values) => async () => {
 
     return Result.ok(outputs);
 }
+
+
+export const flatten = (task) => {
+    const callback = (result) =>
+        Result.isOk(result) ? result.value : Task.of(result);
+
+        return Task.flatMap(callback)(task);
+}
