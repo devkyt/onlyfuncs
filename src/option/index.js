@@ -1,3 +1,5 @@
+import * as Result from "../result/index.js";
+
 export const some = (value) => ({ type: "some", value });
 
 
@@ -85,3 +87,7 @@ export const tap = (effect) => (option) => {
 
 export const fromPredicate = (predicate) => (value) =>
     predicate(value) ? some(value) : none;
+
+
+export const fromResult = (result) =>
+    Result.isOk(result) ? some(result.value) : none;
