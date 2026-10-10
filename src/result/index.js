@@ -52,15 +52,32 @@ export const fromOption = (onNone) => (option) =>
 
 
 export const all = (results) => {
-    const values = [];
+    const outputs = [];
 
     for (const result of results) {
         if (isErr(result)) {
             return result;
         }
 
-        values.push(result.value);
+        outputs.push(result.value);
     }
 
-    return ok(values);
+    return ok(outputs);
+}
+
+
+export const traverse = (transform) => (values) => {
+    const outputs = []
+
+    for (const value of values) {
+        const result = transform(value)
+
+        if (isErr(result)) {
+            return result;
+        }
+
+        outputs.push(result.value);
+    }
+
+    return ok(outputs);
 }
