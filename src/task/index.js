@@ -23,3 +23,7 @@ export const traverse = (transform) => (values) => async () => {
 
     return Promise.all(promises);
 }
+
+
+export const flatten = (task) => () =>
+    task().then((t) => t());
