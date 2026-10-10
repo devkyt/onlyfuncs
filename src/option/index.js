@@ -81,3 +81,7 @@ export const tap = (effect) => (option) => {
 
     return option;
 }
+
+
+export const fromPredicate = (predicate) => (value) =>
+    predicate(value) ? some(value) : none;
