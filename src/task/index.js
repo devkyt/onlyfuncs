@@ -30,7 +30,7 @@ export const flatten = (task) => () =>
 
 
 export const tap = (effect) => (task) => () =>
-    task().then(t => {
-        effect(t);
-        return t;
+    task().then(result => {
+        effect(result);
+        return result;
     });

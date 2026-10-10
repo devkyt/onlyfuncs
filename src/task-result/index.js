@@ -97,3 +97,13 @@ export const flatten = (task) => {
 
         return Task.flatMap(callback)(task);
 }
+
+
+export const tap = (effect) => (task) => () =>
+    task().then(result => {
+        if (Result.isOk(result)) {
+            effect(result.value);
+        }
+
+        return result;
+    });
