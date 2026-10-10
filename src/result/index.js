@@ -103,3 +103,7 @@ export const tapError = (effect) => (result) => {
 
     return result;
 }
+
+
+export const fromPredicate = ({ predicate, onFalse }) => (value) =>
+    predicate(value) ? ok(value) : err(onFalse(value));

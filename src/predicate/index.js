@@ -1,3 +1,5 @@
+import {none, some} from "../option/index.js";
+
 export const not = (predicate) => (value) => !predicate(value);
 
 
