@@ -124,6 +124,9 @@ export const fromOption = (onNone) => (option) => async ()=>
     Result.fromOption(onNone)(option);
 
 
-
 export const allParallel = (tasks) =>
     Task.map(Result.all)(Task.all(tasks));
+
+
+export const traverseParallel = (transform) => (values) =>
+    Task.map(Result.all)(Task.traverse(transform)(values));
