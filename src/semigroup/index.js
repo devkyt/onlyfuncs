@@ -18,7 +18,7 @@ export const array = {
 };
 
 
-export const combineMany = ({ semigroup, initial} ) => (values) => {
+export const combineMany = ({ semigroup, initial } ) => (values) => {
     let accumulator = initial;
 
     for (const value of values) {
