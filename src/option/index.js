@@ -72,3 +72,12 @@ export const traverse = (transform) => (values) => {
 
 export const flatten = (option) =>
     isSome(option) ? option.value : none;
+
+
+export const tap = (effect) => (option) => {
+    if (isSome(option)) {
+        effect(option.value);
+    }
+
+    return option;
+}
