@@ -68,3 +68,7 @@ export const traverse = (transform) => (values) => {
 
     return some(outputs);
 }
+
+
+export const flatten = (option) =>
+    isSome(option) ? option.value : none;
