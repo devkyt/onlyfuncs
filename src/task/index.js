@@ -36,5 +36,14 @@ export const tap = (effect) => (task) => () =>
     });
 
 
+export const tapAsync = (effect) => (task) => async () => {
+    const result = await task();
+
+    await effect(result);
+
+    return result;
+}
+
+
 export const defer = (func) => async() =>
     func();
