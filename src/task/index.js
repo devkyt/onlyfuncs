@@ -34,3 +34,7 @@ export const tap = (effect) => (task) => () =>
         effect(result);
         return result;
     });
+
+
+export const defer = (func) => async() =>
+    func();
