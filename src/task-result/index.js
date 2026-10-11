@@ -144,5 +144,13 @@ export const flatMapResult = (transform) => (task) =>
     Task.map(Result.flatMap(transform))(task);
 
 
-export const flatMapOption = ({transform, onNone}) => (task) =>
+export const flatMapOption = ({ transform, onNone }) => (task) =>
     Task.map(Result.flatMapOption({transform, onNone}))(task);
+
+
+export const filterOrElse = ({ predicate, onFalse }) => (task) =>
+    Task.map(Result.filterOrElse({ predicate, onFalse }))(task);
+
+
+export const mapBoth = ({ onOk, onErr }) => (task) =>
+    Task.map(Result.mapBoth({ onOk, onErr }))(task);
