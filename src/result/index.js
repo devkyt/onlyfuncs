@@ -144,3 +144,14 @@ export const flatMapOption = ({ transform, onNone }) => (result) => {
 
     return Option.isSome(option) ? ok(option.value) : err(onNone(result.value));
 }
+
+
+export const zipWith = (combine) => (left, right) => {
+    for (const result of [left, right]) {
+        if (isErr(result)) {
+            return result;
+        }
+    }
+
+    return ok(combine(left.value, right.value));
+}
