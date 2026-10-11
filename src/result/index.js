@@ -107,3 +107,18 @@ export const tapError = (effect) => (result) => {
 
 export const fromPredicate = ({ predicate, onFalse }) => (value) =>
     predicate(value) ? ok(value) : err(onFalse(value));
+
+
+export const filterOrElse = ({ predicate, onFalse }) => (result) => {
+    if (isErr(result) || predicate(result.value)) {
+        return result;
+    }
+
+    return err(onFalse(result.value));
+}
+
+
+export const mapBoth = ({ onOk, onErr }) => (result) =>
+    isOk(result) ? ok(onOk(result.value)) : err(onErr(result.error));
+
+
