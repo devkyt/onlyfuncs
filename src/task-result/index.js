@@ -130,3 +130,19 @@ export const allParallel = (tasks) =>
 
 export const traverseParallel = (transform) => (values) =>
     Task.map(Result.all)(Task.traverse(transform)(values));
+
+
+export const fromNullable = (onNull) => (value) =>
+    Task.defer(() => Result.fromNullable(onNull)(value));
+
+
+export const fromPredicate = ({ predicate, onFalse }) => (value) =>
+    Task.defer(() => Result.fromPredicate({ predicate, onFalse })(value));
+
+
+export const flatMapResult = (transform) => (task) =>
+    Task.map(Result.flatMap(transform))(task);
+
+
+export const flatMapOption = ({transform, onNone}) => (task) =>
+    Task.map(Result.flatMapOption({transform, onNone}))(task);
