@@ -1,5 +1,6 @@
 import * as Task from "../task/index.js";
 import * as Result from "../result/index.js";
+import {isOk} from "../result/index.js";
 
 
 export const ok = (value) => Task.of(Result.ok(value));
@@ -154,3 +155,25 @@ export const filterOrElse = ({ predicate, onFalse }) => (task) =>
 
 export const mapBoth = ({ onOk, onErr }) => (task) =>
     Task.map(Result.mapBoth({ onOk, onErr }))(task);
+
+
+export const tapAsync = (effect) => (task) => async () => {
+    const result = await task();
+
+    if (Result.isOk(result)) {
+        await effect(result.value);
+    }
+
+    return result;
+}
+
+
+export const tapErrorAsync = (effect) => (task) => async () => {
+    const result = await task();
+
+    if (Result.isErr(result)) {
+        await effect(result.error);
+    }
+
+    return result;
+}
