@@ -122,3 +122,14 @@ export const mapBoth = ({ onOk, onErr }) => (result) =>
     isOk(result) ? ok(onOk(result.value)) : err(onErr(result.error));
 
 
+export const getOrThrow = (result) => {
+    if (isErr(result)) {
+        throw result.error;
+    }
+
+    return result.value;
+}
+
+
+export const fromNullable = (onNull) => (value) =>
+    value !== null && value !== undefined ? ok(value) : err(onNull(value));
