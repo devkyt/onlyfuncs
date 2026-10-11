@@ -43,3 +43,18 @@ export const findFirst = (predicate) => (values) => {
 
     return Option.none;
 }
+
+
+export const at = (index) => {
+    if (!Number.isSafeInteger(index)) {
+        throw new RangeError("Index must be a safe integer");
+    }
+
+    return (values) => {
+        const position = index < 0 ? values.length + index : index;
+
+        return position >= 0 && position < values.length
+            ? Option.some(values[position])
+            : Option.none;
+    }
+}
