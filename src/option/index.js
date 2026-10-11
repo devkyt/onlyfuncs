@@ -91,3 +91,11 @@ export const fromPredicate = (predicate) => (value) =>
 
 export const fromResult = (result) =>
     Result.isOk(result) ? some(result.value) : none;
+
+
+export const toArray = (option) =>
+    isSome(option) ? [option.value] : [];
+
+
+export const zipWith = (combine) => (left, right) =>
+    isSome(left) && isSome(right) ? some(combine(left.value, right.value)) : none;
