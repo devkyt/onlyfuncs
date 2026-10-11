@@ -133,3 +133,14 @@ export const getOrThrow = (result) => {
 
 export const fromNullable = (onNull) => (value) =>
     value !== null && value !== undefined ? ok(value) : err(onNull(value));
+
+
+export const flatMapOption = ({ transform, onNone }) => (result) => {
+    if (isErr(result)) {
+        return result;
+    }
+
+    const option = transform(result.value);
+
+    return Option.isSome(option) ? ok(option.value) : err(onNone(result.value));
+}
