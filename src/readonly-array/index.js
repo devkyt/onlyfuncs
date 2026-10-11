@@ -33,3 +33,13 @@ export const mapResult = (transform) => (values) => {
 }
 
 
+
+export const findFirst = (predicate) => (values) => {
+    for (const value of values) {
+        if (predicate(value)) {
+            return Option.some(value);
+        }
+    }
+
+    return Option.none;
+}
