@@ -25,6 +25,21 @@ export const array = {
 };
 
 
+export const struct = (fields) => {
+    const entries = Object.entries(fields);
+
+    return {
+        combine: Semigroup.struct(fields).combine,
+        empty: () => Object.fromEntries(
+            entries.map(([key, monoid]) => [
+                key,
+                monoid.empty()
+            ])
+        ),
+    };
+};
+
+
 export const combineAll = (monoid) => (values) =>
     Semigroup.combineMany({ semigroup: monoid, initial: monoid.empty() })(values);
 
