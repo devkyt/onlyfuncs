@@ -177,3 +177,38 @@ export const tapErrorAsync = (effect) => (task) => async () => {
 
     return result;
 }
+
+
+export const withCleanup = (cleanup) => (task) => async () => {
+    let result;
+
+    let taskError;
+    let taskFailed = false;
+
+    try {
+        result = await task();
+    } catch (error) {
+        taskError = error;
+        taskFailed = true;
+    }
+
+    try {
+        await cleanup();
+    } catch (error) {
+        if (taskFailed) {
+            throw new AggregateError([taskError, error]);
+        }
+
+        if (Result.isErr(result)) {
+            throw new AggregateError([result.error, error]);
+        }
+
+        throw error;
+    }
+
+    if (taskFailed) {
+        throw taskError;
+    }
+
+    return result;
+}
