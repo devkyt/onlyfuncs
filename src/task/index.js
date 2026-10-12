@@ -47,3 +47,13 @@ export const tapAsync = (effect) => (task) => async () => {
 
 export const defer = (func) => async() =>
     func();
+
+
+export const sleep = (ms) => {
+    if (!Number.isInteger(ms) || ms < 0 || ms > 2147483647) {
+        throw new RangeError("Milliseconds must be an integer between 0 and 2147483647");
+    }
+
+    return () =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+}
