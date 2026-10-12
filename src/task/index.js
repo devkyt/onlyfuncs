@@ -57,3 +57,32 @@ export const sleep = (ms) => {
     return () =>
         new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+
+export const withCleanup = (cleanup) => (task) => async () => {
+    let result;
+
+    let taskError;
+    let taskFailed = false;
+
+    try {
+        result = await task();
+    } catch (error) {
+        taskError = error;
+        taskFailed = true;
+    }
+
+    try {
+        await cleanup();
+    } catch (error) {
+        throw taskFailed
+            ? new AggregateError([taskError, error])
+            : error;
+    }
+
+    if (taskFailed) {
+        throw taskError;
+    }
+
+    return result;
+}
