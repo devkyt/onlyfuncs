@@ -133,6 +133,22 @@ export const traverseParallel = (transform) => (values) =>
     Task.map(Result.all)(Task.traverse(transform)(values));
 
 
+export const traverseParallelLimit = ({ concurrency, transform }) => {
+    if (!Number.isInteger(concurrency) || concurrency <= 0) {
+        throw new RangeError('concurrency must be a positive integer');
+    }
+
+    return (values) => async () => {
+        const results = new Array(values.length);
+
+        let index = 0;
+        let stopped = false;
+
+        // implement worker
+    }
+}
+
+
 export const fromNullable = (onNull) => (value) =>
     Task.defer(() => Result.fromNullable(onNull)(value));
 
