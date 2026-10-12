@@ -58,3 +58,18 @@ export const at = (index) => {
             : Option.none;
     }
 }
+
+
+export const groupBy = (keyOf) => (values) => {
+    const outputs = new Map();
+
+    for (const value of values) {
+        const key = keyOf(value)
+
+        outputs.has(key)
+            ? outputs.get(key).push(value)
+            : outputs.set(key, [value])
+    }
+
+    return outputs;
+}
