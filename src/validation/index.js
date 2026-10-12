@@ -48,3 +48,20 @@ export const traverse = ( { semigroup, transform }) => (values) => {
 
     return hasErrors ? Result.err(errors) : Result.ok(outputs);
 }
+
+
+export const zipWith = ({ semigroup, combine }) => (left, right) => {
+    if (Result.isOk(left) && Result.isOk(right)) {
+        return Result.ok(combine(left.value, right.value));
+    }
+
+    if (Result.isErr(left)) {
+        if (Result.isErr(right)) {
+            return Result.err(semigroup.combine(left.error, right.error));
+        }
+
+        return left;
+    }
+
+    return right;
+}
