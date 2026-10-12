@@ -18,6 +18,20 @@ export const array = {
 };
 
 
+export const struct = (fields) => {
+    const entries = Object.entries(fields);
+
+    return {
+        combine: (left, right) => Object.fromEntries(
+           entries.map(([key, semigroup])=> [
+               key,
+               semigroup.combine(left[key], right[key])
+           ])
+        ),
+    };
+};
+
+
 export const combineMany = ({ semigroup, initial } ) => (values) => {
     let accumulator = initial;
 
