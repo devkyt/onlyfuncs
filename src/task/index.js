@@ -1,28 +1,26 @@
 export const of = (value) => () => Promise.resolve(value);
 
 
+export const defer = (func) => async() =>
+    func();
+
+
+export const sleep = (ms) => {
+    if (!Number.isInteger(ms) || ms < 0 || ms > 2147483647) {
+        throw new RangeError("Milliseconds must be an integer between 0 and 2147483647");
+    }
+
+    return () =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
 export const map = (transform) => (task) => () =>
     task().then(transform);
 
 
 export const flatMap = (transform) => (task) => () =>
     task().then(transform).then((t) => t());
-
-
-export const all = (tasks) => async () => {
-    const promises = tasks.map((task) => task());
-    return Promise.all(promises);
-}
-
-
-export const traverse = (transform) => (values) => async () => {
-    const promises = values.map((value) => {
-        const task = transform(value);
-        return task();
-    });
-
-    return Promise.all(promises);
-}
 
 
 export const flatten = (task) => () =>
@@ -45,17 +43,19 @@ export const tapAsync = (effect) => (task) => async () => {
 }
 
 
-export const defer = (func) => async() =>
-    func();
+export const all = (tasks) => async () => {
+    const promises = tasks.map((task) => task());
+    return Promise.all(promises);
+}
 
 
-export const sleep = (ms) => {
-    if (!Number.isInteger(ms) || ms < 0 || ms > 2147483647) {
-        throw new RangeError("Milliseconds must be an integer between 0 and 2147483647");
-    }
+export const traverse = (transform) => (values) => async () => {
+    const promises = values.map((value) => {
+        const task = transform(value);
+        return task();
+    });
 
-    return () =>
-        new Promise((resolve) => setTimeout(resolve, ms));
+    return Promise.all(promises);
 }
 
 

@@ -8,37 +8,23 @@ export const ok = (value) => Task.of(Result.ok(value));
 export const err = (error) => Task.of(Result.err(error));
 
 
-export const map = (transform) => (task) =>
-    Task.map(Result.map(transform))(task);
+export const fromNullable = (onNull) => (value) =>
+    Task.defer(() => Result.fromNullable(onNull)(value));
 
 
-export const mapError = (transform) => (task) =>
-    Task.map(Result.mapError(transform))(task);
+export const fromPredicate = ({ predicate, onFalse }) => (value) =>
+    Task.defer(() => Result.fromPredicate({ predicate, onFalse })(value));
 
 
-export const flatMap = (transform) => (task) => {
-    const callback = (result) =>
-        Result.isOk(result) ? transform(result.value) : Task.of(result);
-
-    return Task.flatMap(callback)(task)
-};
+export const fromOption = (onNone) => (option) => async ()=>
+    Result.fromOption(onNone)(option);
 
 
-export const getOrElse = (fallback) => (task) =>
-    Task.map(Result.getOrElse(fallback))(task);
+export const fromResult = (result) => Task.of(result);
 
 
 
-export const orElse = (fallback) => (task) => {
-    const callback = (result) =>
-        Result.isErr(result) ? fallback(result.error) : Task.of(result);
-
-    return Task.flatMap(callback)(task);
-}
-
-
-export const match = ({ onOk, onErr }) => (task) =>
-    Task.map(Result.match({ onOk, onErr }))(task);
+export const fromTask = (task) => Task.map(Result.ok)(task);
 
 
 export const fromThrowable = (func) => async() => {
@@ -50,10 +36,103 @@ export const fromThrowable = (func) => async() => {
 }
 
 
-export const fromResult = (result) => Task.of(result);
+export const map = (transform) => (task) =>
+    Task.map(Result.map(transform))(task);
 
 
-export const fromTask = (task) => Task.map(Result.ok)(task);
+export const mapError = (transform) => (task) =>
+    Task.map(Result.mapError(transform))(task);
+
+
+export const mapBoth = ({ onOk, onErr }) => (task) =>
+    Task.map(Result.mapBoth({ onOk, onErr }))(task);
+
+
+export const flatMap = (transform) => (task) => {
+    const callback = (result) =>
+        Result.isOk(result) ? transform(result.value) : Task.of(result);
+
+    return Task.flatMap(callback)(task)
+};
+
+
+export const flatMapResult = (transform) => (task) =>
+    Task.map(Result.flatMap(transform))(task);
+
+
+export const flatMapOption = ({ transform, onNone }) => (task) =>
+    Task.map(Result.flatMapOption({transform, onNone}))(task);
+
+
+export const flatten = (task) => {
+    const callback = (result) =>
+        Result.isOk(result) ? result.value : Task.of(result);
+
+        return Task.flatMap(callback)(task);
+}
+
+
+
+export const filterOrElse = ({ predicate, onFalse }) => (task) =>
+    Task.map(Result.filterOrElse({ predicate, onFalse }))(task);
+
+
+export const orElse = (fallback) => (task) => {
+    const callback = (result) =>
+        Result.isErr(result) ? fallback(result.error) : Task.of(result);
+
+    return Task.flatMap(callback)(task);
+}
+
+
+export const tap = (effect) => (task) => () =>
+    task().then(result => {
+        if (Result.isOk(result)) {
+            effect(result.value);
+        }
+
+        return result;
+    });
+
+
+export const tapAsync = (effect) => (task) => async () => {
+    const result = await task();
+
+    if (Result.isOk(result)) {
+        await effect(result.value);
+    }
+
+    return result;
+}
+
+
+export const tapError = (effect) => (task) => () =>
+    task().then(result => {
+        if (Result.isErr(result)) {
+            effect(result.error);
+        }
+
+        return result;
+    });
+
+
+export const tapErrorAsync = (effect) => (task) => async () => {
+    const result = await task();
+
+    if (Result.isErr(result)) {
+        await effect(result.error);
+    }
+
+    return result;
+}
+
+
+export const getOrElse = (fallback) => (task) =>
+    Task.map(Result.getOrElse(fallback))(task);
+
+
+export const match = ({ onOk, onErr }) => (task) =>
+    Task.map(Result.match({ onOk, onErr }))(task);
 
 
 export const all = (tasks) => async () => {
@@ -73,6 +152,14 @@ export const all = (tasks) => async () => {
 }
 
 
+export const allParallel = (tasks) =>
+    Task.map(Result.all)(Task.all(tasks));
+
+
+export const allParallelLimit = (concurrency) =>
+    traverseParallelLimit({ concurrency, transform: task => task });
+
+
 export const traverse = (transform) => (values) => async () => {
     const outputs = [];
 
@@ -89,43 +176,6 @@ export const traverse = (transform) => (values) => async () => {
 
     return Result.ok(outputs);
 }
-
-
-export const flatten = (task) => {
-    const callback = (result) =>
-        Result.isOk(result) ? result.value : Task.of(result);
-
-        return Task.flatMap(callback)(task);
-}
-
-
-export const tap = (effect) => (task) => () =>
-    task().then(result => {
-        if (Result.isOk(result)) {
-            effect(result.value);
-        }
-
-        return result;
-    });
-
-
-
-export const tapError = (effect) => (task) => () =>
-    task().then(result => {
-        if (Result.isErr(result)) {
-            effect(result.error);
-        }
-
-        return result;
-    });
-
-
-export const fromOption = (onNone) => (option) => async ()=>
-    Result.fromOption(onNone)(option);
-
-
-export const allParallel = (tasks) =>
-    Task.map(Result.all)(Task.all(tasks));
 
 
 export const traverseParallel = (transform) => (values) =>
@@ -171,52 +221,6 @@ export const traverseParallelLimit = ({ concurrency, transform }) => {
 }
 
 
-export const fromNullable = (onNull) => (value) =>
-    Task.defer(() => Result.fromNullable(onNull)(value));
-
-
-export const fromPredicate = ({ predicate, onFalse }) => (value) =>
-    Task.defer(() => Result.fromPredicate({ predicate, onFalse })(value));
-
-
-export const flatMapResult = (transform) => (task) =>
-    Task.map(Result.flatMap(transform))(task);
-
-
-export const flatMapOption = ({ transform, onNone }) => (task) =>
-    Task.map(Result.flatMapOption({transform, onNone}))(task);
-
-
-export const filterOrElse = ({ predicate, onFalse }) => (task) =>
-    Task.map(Result.filterOrElse({ predicate, onFalse }))(task);
-
-
-export const mapBoth = ({ onOk, onErr }) => (task) =>
-    Task.map(Result.mapBoth({ onOk, onErr }))(task);
-
-
-export const tapAsync = (effect) => (task) => async () => {
-    const result = await task();
-
-    if (Result.isOk(result)) {
-        await effect(result.value);
-    }
-
-    return result;
-}
-
-
-export const tapErrorAsync = (effect) => (task) => async () => {
-    const result = await task();
-
-    if (Result.isErr(result)) {
-        await effect(result.error);
-    }
-
-    return result;
-}
-
-
 export const withCleanup = (cleanup) => (task) => async () => {
     let result;
 
@@ -250,10 +254,6 @@ export const withCleanup = (cleanup) => (task) => async () => {
 
     return result;
 }
-
-
-export const allParallelLimit = (concurrency) =>
-    traverseParallelLimit({ concurrency, transform: task => task });
 
 
 
