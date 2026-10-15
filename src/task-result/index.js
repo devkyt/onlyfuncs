@@ -254,3 +254,23 @@ export const withCleanup = (cleanup) => (task) => async () => {
 
 export const allParallelLimit = (concurrency) =>
     traverseParallelLimit({ concurrency, transform: task => task });
+
+
+
+export const retry = ({ attempts, retryOn, delay }) => {
+    if (!Number.isSafeInteger(attempts) || attempts < 1) {
+        throw new RangeError('attempts must be a positive integer');
+    }
+
+    return (task) => async () => {
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+            const result = await task();
+
+            if (Result.isOk(result) || attempt === attempts || !retryOn(result.error, attempt)) {
+                return result;
+            }
+
+            await Task.sleep(delay(result.error, attempt))();
+        }
+    }
+}
