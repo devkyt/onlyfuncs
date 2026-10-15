@@ -250,3 +250,7 @@ export const withCleanup = (cleanup) => (task) => async () => {
 
     return result;
 }
+
+
+export const allParallelLimit = (concurrency) =>
+    traverseParallelLimit({ concurrency, transform: task => task });
