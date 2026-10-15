@@ -1,6 +1,5 @@
 import * as Task from "../task/index.js";
 import * as Result from "../result/index.js";
-import {isOk} from "../result/index.js";
 
 
 export const ok = (value) => Task.of(Result.ok(value));
@@ -134,8 +133,8 @@ export const traverseParallel = (transform) => (values) =>
 
 
 export const traverseParallelLimit = ({ concurrency, transform }) => {
-    if (!Number.isInteger(concurrency) || concurrency <= 0) {
-        throw new RangeError('concurrency must be a positive integer');
+    if (!Number.isSafeInteger(concurrency) || concurrency <= 0) {
+        throw new RangeError('concurrency must be a positive safe integer');
     }
 
     return (values) => async () => {
@@ -144,7 +143,30 @@ export const traverseParallelLimit = ({ concurrency, transform }) => {
         let index = 0;
         let stopped = false;
 
-        // implement worker
+        const worker = async () => {
+            while (!stopped && index < values.length) {
+                const currentIndex = index;
+                index ++;
+
+                try {
+                    results[currentIndex] = await transform(values[currentIndex])();
+                } catch (error) {
+                    stopped = true;
+                    throw error;
+                }
+            }
+        }
+
+        const workers = []
+        const parallel = Math.min(concurrency, values.length);
+
+        for (let count = 0; count < parallel; count++) {
+            workers.push(worker());
+        }
+
+        await Promise.all(workers);
+
+        return Result.all(results);
     }
 }
 
