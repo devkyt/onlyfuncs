@@ -1,9 +1,22 @@
 {
-  "name": "pigeon",
+  "name": "@devkyt/pigeon",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./function": "./src/function/index.js",
+    "./option": "./src/option/index.js",
+    "./result": "./src/result/index.js",
+    "./predicate": "./src/predicate/index.js",
+    "./readonly-array": "./src/readonly-array/index.js",
+    "./task": "./src/task/index.js",
+    "./task-result": "./src/task-result/index.js",
+    "./semigroup": "./src/semigroup/index.js",
+    "./monoid": "./src/monoid/index.js",
+    "./validation": "./src/validation/index.js"
   }
 }

@@ -16,6 +16,7 @@ coverage/
 .idea/
 .DS_Store
 
-# AI
+# AI instructions and planning notes
 PLAN.md
 SUMMARY.md
+PUBLICATION_*.md
