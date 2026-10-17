@@ -74,3 +74,16 @@ console.log(racer('{"name": "Bowser", "power": "fireball"}')); // "Select: Bowse
 
 
 ## Modules
+
+| Module | Import | Purpose |
+| --- | --- | --- |
+| Function | `onlyfuncs/function` | Compose and transform functions with `pipe`, `flow`, and `compose`|
+| Option | `onlyfuncs/option` | Represent optional values and handle missing data|
+| Result | `onlyfuncs/result` | Represent success or failure and recover from errors|
+| Predicate | `onlyfuncs/predicate` | Combine and adapt boolean checks |
+| ReadonlyArray | `onlyfuncs/readonly-array` | Find, group, and transform array values |
+| Task | `onlyfuncs/task` | Define lazy asynchronous computations |
+| TaskResult | `onlyfuncs/task-result` | Combine asynchronous computations with success and failure handling |
+| Semigroup | `onlyfuncs/semigroup` | Combine values, such as strings, arrays, and records |
+| Monoid | `onlyfuncs/monoid` | Combine values with an identity |
+| Validation | `onlyfuncs/validation` | Accumulate errors from independent checks |
