@@ -1,11 +1,16 @@
 {
-  "name": "@devkyt/pigeon",
+  "name": "onlyfuncs",
   "version": "0.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test"
   },
+  "files": [
+    "src/index.js",
+    "src/*/index.js"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./function": "./src/function/index.js",
