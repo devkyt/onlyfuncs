@@ -66,10 +66,10 @@ const racer = (value) => pipe(
 );
 
 
-console.log(racer('{"name": "Mario"}')); // "Select: Mario"
-console.log(racer('{"na": "Luigi"}')); // Could not choose a racer: name is missing
-console.log(racer('{')); // Could not choose a racer: invalid JSON
-console.log(racer('{"name": "Bowser", "power": "fireball"}')); // "Select: Bowser"
+console.log(racer('{"name": "Mario"}')); // Mario
+console.log(racer('{"na": "Luigi"}')); // Name is missing
+console.log(racer('{')); // Invalid JSON
+console.log(racer('{"name": "Bowser", "power": "fireball"}')); // Bowser
 ```
 
 ## Modules
