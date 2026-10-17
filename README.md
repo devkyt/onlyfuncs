@@ -72,7 +72,6 @@ console.log(racer('{')); // Could not choose a racer: invalid JSON
 console.log(racer('{"name": "Bowser", "power": "fireball"}')); // "Select: Bowser"
 ```
 
-
 ## Modules
 
 | Module | Import | Purpose |
@@ -87,3 +86,7 @@ console.log(racer('{"name": "Bowser", "power": "fireball"}')); // "Select: Bowse
 | Semigroup | `onlyfuncs/semigroup` | Combine values, such as strings, arrays, and records |
 | Monoid | `onlyfuncs/monoid` | Combine values with an identity |
 | Validation | `onlyfuncs/validation` | Accumulate errors from independent checks |
+
+## License
+
+MIT © 2026 Kyrylo Tykhanskyi. See [LICENSE](LICENSE).
