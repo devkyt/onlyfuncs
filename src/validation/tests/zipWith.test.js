@@ -37,8 +37,8 @@ describe("zipWith", () => {
     });
 
     it("combines both errors once in left-to-right order", () => {
-        const left = Object.freeze(["Link missing"]);
-        const right = Object.freeze(["Zelda missing"]);
+        const left = Object.freeze(["No weapon equipped"]);
+        const right = Object.freeze(["Spell is locked"]);
         const calls = [];
         const run = zipWith({
             semigroup: {
@@ -53,7 +53,7 @@ describe("zipWith", () => {
         });
         const result = run(Object.freeze(Result.err(left)), Object.freeze(Result.err(right)));
 
-        assert.deepStrictEqual(result, Result.err(["Link missing", "Zelda missing"]));
+        assert.deepStrictEqual(result, Result.err(["No weapon equipped", "Spell is locked"]));
         assert.deepStrictEqual(calls, [[left, right]]);
         assert.strictEqual(calls[0][0], left);
         assert.strictEqual(calls[0][1], right);
@@ -86,7 +86,7 @@ describe("zipWith", () => {
     });
 
     it("propagates value callback throws", () => {
-        const error = { reason: "No health" };
+        const error = { reason: "No healing items" };
         const run = zipWith({
             semigroup: { combine: () => assert.fail("error combine should not run") },
             combine: () => {
@@ -109,5 +109,26 @@ describe("zipWith", () => {
         });
 
         assert.throws(() => run(Result.err(1), Result.err(2)), actual => actual === error);
+    });
+
+    it("preserves the exact error payload returned by the semigroup", () => {
+        const failures = Object.freeze({ attack: "No weapon", castSpell: "Not enough mana" });
+        let calls = 0;
+        const validate = zipWith({
+            semigroup: {
+                combine: (...args) => {
+                    calls += 1;
+                    assert.deepStrictEqual(args, ["No weapon", "Not enough mana"]);
+
+                    return failures;
+                },
+            },
+            combine: () => assert.fail("value combine should not run"),
+        });
+        const result = validate(Result.err("No weapon"), Result.err("Not enough mana"));
+
+        assert.deepStrictEqual(result, { type: "err", error: failures });
+        assert.strictEqual(result.error, failures);
+        assert.strictEqual(calls, 1);
     });
 });

@@ -5,11 +5,13 @@ import { ok, err, map } from '../index.js';
 
 describe("map", () => {
     it("transforms an Ok value without changing the input", () => {
-        const input = ok(100);
-        const result = map(health => health - 10)(input);
+        const hero = Object.freeze({ name: "Samus", health: 40 });
+        const input = Object.freeze(ok(hero));
+        const heal = map(value => ({ ...value, health: value.health + 25 }));
+        const result = heal(input);
 
-        assert.deepStrictEqual(result, ok(90));
-        assert.deepStrictEqual(input, ok(100));
+        assert.deepStrictEqual(result, { type: "ok", value: { name: "Samus", health: 65 } });
+        assert.strictEqual(input.value, hero);
         assert.notStrictEqual(result, input);
     });
 
@@ -30,7 +32,7 @@ describe("map", () => {
         const healthOf = map((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [link]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], link);
 
             return args[0].health;
@@ -61,5 +63,13 @@ describe("map", () => {
         });
 
         assert.throws(() => run(ok("Link")), actual => actual === error);
+    });
+
+    it("wraps a returned Result without flattening it", () => {
+        const selected = ok({ kind: "potion", healing: 25 });
+        const result = map(() => selected)(ok("potion"));
+
+        assert.deepStrictEqual(result, { type: "ok", value: selected });
+        assert.strictEqual(result.value, selected);
     });
 });

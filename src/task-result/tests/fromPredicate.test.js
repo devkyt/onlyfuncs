@@ -32,25 +32,30 @@ describe("fromPredicate", () => {
     });
 
     it("calls onFalse once with the original failing value", async () => {
-        const error = { reason: "No health" };
+        const spell = Object.freeze({ name: "Meteor", cost: 50 });
+        const error = Object.freeze({ action: "castSpell", reason: "Not enough mana" });
         const calls = [];
         const run = fromPredicate({
-            predicate: value => {
-                calls.push(["predicate", value]);
+            predicate: (...args) => {
+                assert.strictEqual(args.length, 1);
+                assert.strictEqual(args[0], spell);
+                calls.push("predicate");
 
-                return false;
+                return args[0].cost <= 20;
             },
             onFalse: (...args) => {
-                calls.push(["onFalse", ...args]);
+                assert.strictEqual(args.length, 1);
+                assert.strictEqual(args[0], spell);
+                calls.push("onFalse");
 
                 return error;
             },
         });
-        const result = await run(0)();
+        const result = await run(spell)();
 
         assert.deepStrictEqual(result, Result.err(error));
         assert.strictEqual(result.error, error);
-        assert.deepStrictEqual(calls, [["predicate", 0], ["onFalse", 0]]);
+        assert.deepStrictEqual(calls, ["predicate", "onFalse"]);
     });
 
     it("keeps accepted undefined and a falsy failure payload", async () => {

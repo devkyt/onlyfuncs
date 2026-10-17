@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { ok, fromResult, tap } from '../index.js';
@@ -47,10 +48,7 @@ describe("tap", () => {
     });
 
     it("waits for the source before calling the effect", async () => {
-        let finishSource;
-        const source = new Promise(resolve => {
-            finishSource = resolve;
-        });
+        const { promise: source, resolve: finishSource } = Promise.withResolvers();
         let calls = 0;
         const input = Result.ok("Link");
         const task = tap(() => {
@@ -58,7 +56,7 @@ describe("tap", () => {
         })(() => source);
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 0);
         finishSource(input);
@@ -95,10 +93,7 @@ describe("tap", () => {
     });
 
     it("does not wait for a returned Promise", async () => {
-        let finishEffect;
-        const effect = new Promise(resolve => {
-            finishEffect = resolve;
-        });
+        const { promise: effect, resolve: finishEffect } = Promise.withResolvers();
         const input = Result.ok("Link");
         let settled = false;
         const task = tap(() => effect)(fromResult(input));
@@ -112,7 +107,7 @@ describe("tap", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, true);
         assert.strictEqual(await pending, input);

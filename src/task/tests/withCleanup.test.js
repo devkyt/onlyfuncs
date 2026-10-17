@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import { of, withCleanup } from '../index.js';
 
@@ -24,14 +25,8 @@ describe("withCleanup", () => {
     });
 
     it("waits for the source and then for cleanup before settling", async () => {
-        let finishSource;
-        const source = new Promise(resolve => {
-            finishSource = resolve;
-        });
-        let finishCleanup;
-        const cleanup = new Promise(resolve => {
-            finishCleanup = resolve;
-        });
+        const { promise: source, resolve: finishSource } = Promise.withResolvers();
+        const { promise: cleanup, resolve: finishCleanup } = Promise.withResolvers();
         let cleanupCalls = 0;
         let settled = false;
         const task = withCleanup(() => {
@@ -44,13 +39,13 @@ describe("withCleanup", () => {
             settled = true;
         });
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(cleanupCalls, 0);
         assert.strictEqual(settled, false);
         finishSource("Link");
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(cleanupCalls, 1);
         assert.strictEqual(settled, false);
@@ -61,10 +56,7 @@ describe("withCleanup", () => {
 
     it("awaits cleanup after source rejection and preserves the rejection", async () => {
         const error = { reason: "Missing hero" };
-        let finishCleanup;
-        const cleanup = new Promise(resolve => {
-            finishCleanup = resolve;
-        });
+        const { promise: cleanup, resolve: finishCleanup } = Promise.withResolvers();
         let settled = false;
         let cleanupCalls = 0;
         const task = withCleanup(() => {
@@ -83,7 +75,7 @@ describe("withCleanup", () => {
         );
         const rejection = assert.rejects(pending, actual => actual === error);
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(cleanupCalls, 1);
         assert.strictEqual(settled, false);

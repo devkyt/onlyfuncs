@@ -6,7 +6,7 @@ import { fromResult } from '../index.js';
 
 describe("fromResult", () => {
     it("lifts Ok without nesting it and preserves identity on every run", async () => {
-        const input = Result.ok({ health: 100 });
+        const input = Result.ok({ kind: "sword", damage: 12 });
 
         const task = fromResult(input);
 
@@ -16,7 +16,7 @@ describe("fromResult", () => {
     });
 
     it("lifts Err without rejecting and preserves identity", async () => {
-        const input = Result.err({ stamina: 0 });
+        const input = Result.err({ action: "attack", weapon: null });
 
         const task = fromResult(input);
 

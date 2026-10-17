@@ -5,26 +5,28 @@ import { some, none, zipWith } from '../index.js';
 
 describe("zipWith", () => {
     it("combines both payloads once in left-to-right order", () => {
-        const link = Object.freeze({ health: 100 });
-        const output = { name: "Link", health: 100 };
+        const spell = Object.freeze({ name: "Fireball", damage: 20 });
+        const target = Object.freeze({ name: "Goblin" });
+        const cast = { spell, target };
         let calls = 0;
-        const run = zipWith((...args) => {
+        const castSpell = zipWith((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [link, "Link"]);
-            assert.strictEqual(args[0], link);
+            assert.strictEqual(args.length, 2);
+            assert.strictEqual(args[0], spell);
+            assert.strictEqual(args[1], target);
 
-            return output;
+            return cast;
         });
-        const left = Object.freeze(some(link));
-        const right = Object.freeze(some("Link"));
+        const left = Object.freeze(some(spell));
+        const right = Object.freeze(some(target));
 
         assert.strictEqual(calls, 0);
 
-        const result = run(left, right);
+        const result = castSpell(left, right);
 
-        assert.deepStrictEqual(result, some(output));
-        assert.strictEqual(result.value, output);
+        assert.deepStrictEqual(result, { type: "some", value: cast });
+        assert.strictEqual(result.value, cast);
         assert.strictEqual(calls, 1);
     });
 

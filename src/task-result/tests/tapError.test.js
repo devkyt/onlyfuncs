@@ -1,20 +1,21 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { err, fromResult, tapError } from '../index.js';
 
 describe("tapError", () => {
     it("defers and repeats the source and effect", async () => {
-        const link = Object.freeze({ health: 100 });
-        const input = Result.err(link);
+        const failure = Object.freeze({ action: "castSpell", reason: "Cooldown" });
+        const input = Result.err(failure);
         let sourceCalls = 0;
         let effectCalls = 0;
         const task = tapError((...args) => {
             effectCalls += 1;
 
             assert.strictEqual(args.length, 1);
-            assert.strictEqual(args[0], link);
+            assert.strictEqual(args[0], failure);
 
             return "ignored";
         })((...args) => {
@@ -47,18 +48,15 @@ describe("tapError", () => {
     });
 
     it("waits for the source before calling the effect", async () => {
-        let finishSource;
-        const source = new Promise(resolve => {
-            finishSource = resolve;
-        });
+        const { promise: source, resolve: finishSource } = Promise.withResolvers();
         let calls = 0;
-        const input = Result.err("Link");
+        const input = Result.err("Spell on cooldown");
         const task = tapError(() => {
             calls += 1;
         })(() => source);
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 0);
         finishSource(input);
@@ -68,7 +66,7 @@ describe("tapError", () => {
     });
 
     it("preserves source rejection and skips the effect", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Spell unavailable" };
         const task = tapError(() => {
             assert.fail("effect should not run");
         })(() => Promise.reject(error));
@@ -77,10 +75,10 @@ describe("tapError", () => {
     });
 
     it("turns an effect throw into a rejection", async () => {
-        const error = { reason: "No stamina" };
+        const error = { reason: "Not enough mana" };
         const task = tapError(() => {
             throw error;
-        })(err("Link"));
+        })(err("Spell on cooldown"));
 
         await assert.rejects(task(), actual => actual === error);
     });
@@ -95,11 +93,8 @@ describe("tapError", () => {
     });
 
     it("does not wait for a returned Promise", async () => {
-        let finishEffect;
-        const effect = new Promise(resolve => {
-            finishEffect = resolve;
-        });
-        const input = Result.err("Link");
+        const { promise: effect, resolve: finishEffect } = Promise.withResolvers();
+        const input = Result.err("Spell on cooldown");
         let settled = false;
         const task = tapError(() => effect)(fromResult(input));
         const pending = task();
@@ -112,7 +107,7 @@ describe("tapError", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, true);
         assert.strictEqual(await pending, input);

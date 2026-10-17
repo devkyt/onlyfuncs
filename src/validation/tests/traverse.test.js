@@ -32,22 +32,22 @@ describe("traverse", () => {
     });
 
     it("accumulates every error in input order", () => {
-        const link = Object.freeze(["Link missing"]);
-        const zelda = Object.freeze(["Zelda missing"]);
+        const attackErrors = Object.freeze(["No weapon equipped"]);
+        const spellErrors = Object.freeze(["Spell is locked"]);
         const input = Object.freeze([
-            Object.freeze(Result.err(link)), Result.ok(100),
-            Object.freeze(Result.err(zelda)), Result.err(["No stamina"]),
+            Object.freeze(Result.err(attackErrors)), Result.ok(100),
+            Object.freeze(Result.err(spellErrors)), Result.err(["Not enough mana"]),
         ]);
         const run = traverse({ semigroup: Semigroup.array, transform: value => value });
         const result = run(input);
 
-        assert.deepStrictEqual(result, Result.err(["Link missing", "Zelda missing", "No stamina"]));
-        assert.deepStrictEqual(link, ["Link missing"]);
-        assert.deepStrictEqual(zelda, ["Zelda missing"]);
+        assert.deepStrictEqual(result, Result.err([
+            "No weapon equipped", "Spell is locked", "Not enough mana",
+        ]));
     });
 
     it("keeps a single error without calling combine", () => {
-        const error = { reason: "No health" };
+        const error = { reason: "No healing items" };
         const semigroup = {
             combine: () => {
                 assert.fail("combine should not run");
@@ -95,23 +95,23 @@ describe("traverse", () => {
 
         function* results() {
             calls.push("Link");
-            yield Result.err(["Link missing"]);
+            yield Result.err(["No weapon equipped"]);
             calls.push("Zelda");
-            yield Result.err(["Zelda missing"]);
+            yield Result.err(["Spell is locked"]);
         }
 
         const run = traverse({ semigroup: Semigroup.array, transform: value => value });
         const result = run(results());
 
-        assert.deepStrictEqual(result, Result.err(["Link missing", "Zelda missing"]));
+        assert.deepStrictEqual(result, Result.err(["No weapon equipped", "Spell is locked"]));
         assert.deepStrictEqual(calls, ["Link", "Zelda"]);
     });
 
     it("propagates iteration failures after an Err", () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Loadout unavailable" };
 
         function* results() {
-            yield Result.err(["No health"]);
+            yield Result.err(["No healing items"]);
             throw error;
         }
 
@@ -152,16 +152,16 @@ describe("traverse", () => {
     it("keeps separate accumulators on repeated calls", () => {
         const run = traverse({
             semigroup: Semigroup.array,
-            transform: value => value ? Result.ok(value) : Result.err(["No health"]),
+            transform: value => value ? Result.ok(value) : Result.err(["No healing items"]),
         });
 
-        assert.deepStrictEqual(run([0]), Result.err(["No health"]));
+        assert.deepStrictEqual(run([0]), Result.err(["No healing items"]));
         assert.deepStrictEqual(run([100]), Result.ok([100]));
         assert.deepStrictEqual(run([]), Result.ok([]));
     });
 
     it("propagates transform throws and skips remaining inputs", () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Loadout unavailable" };
         const calls = [];
         const run = traverse({
             semigroup: Semigroup.array,

@@ -18,12 +18,23 @@ describe("findFirst", () => {
         assert.deepStrictEqual(calls, [[0], [10]]);
     });
 
-    it("preserves the matched object reference", () => {
-        const link = Object.freeze({ health: 100 });
-        const result = findFirst(hero => hero.health > 0)(Object.freeze([link]));
+    it("passes original items to the predicate and preserves the first match", () => {
+        const sword = Object.freeze({ kind: "sword", damage: 12 });
+        const potion = Object.freeze({ kind: "potion", healing: 25 });
+        const calls = [];
+        const chooseItem = findFirst((...args) => {
+            assert.strictEqual(args.length, 1);
+            calls.push(args[0]);
 
-        assert.deepStrictEqual(result, Option.some(link));
-        assert.strictEqual(result.value, link);
+            return args[0].kind === "potion";
+        });
+        const result = chooseItem(Object.freeze([sword, potion, potion]));
+
+        assert.deepStrictEqual(result, Option.some(potion));
+        assert.strictEqual(result.value, potion);
+        assert.strictEqual(calls.length, 2);
+        assert.strictEqual(calls[0], sword);
+        assert.strictEqual(calls[1], potion);
     });
 
     it("returns shared none after checking every nonmatching value", () => {

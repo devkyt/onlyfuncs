@@ -23,17 +23,17 @@ describe("ok", () => {
     });
 
     it("preserves object and array references", () => {
-        const link = { health: 100 };
-        const names = ["Link", "Zelda"];
+        const loot = { coins: 100 };
+        const items = ["sword", "shield"];
 
-        assert.strictEqual(ok(link).value, link);
-        assert.strictEqual(ok(names).value, names);
+        assert.strictEqual(ok(loot).value, loot);
+        assert.strictEqual(ok(items).value, items);
     });
 
     it("creates a fresh wrapper for each call", () => {
-        const link = { stamina: 50 };
-        const first = ok(link);
-        const second = ok(link);
+        const loot = { coins: 50 };
+        const first = ok(loot);
+        const second = ok(loot);
 
         assert.notStrictEqual(first, second);
         assert.strictEqual(first.value, second.value);

@@ -80,4 +80,11 @@ describe("map", () => {
 
         await assert.rejects(task(), actual => actual === error);
     });
+
+    it("preserves a returned task as data without running it", async () => {
+        const attack = () => assert.fail("returned task should not run");
+        const chooseAction = map(() => attack)(of("sword"));
+
+        assert.strictEqual(await chooseAction(), attack);
+    });
 });

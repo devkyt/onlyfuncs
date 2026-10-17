@@ -5,13 +5,15 @@ import { of } from '../index.js';
 
 describe("of", () => {
     it("returns a task resolving to the original value on every run", async () => {
-        const link = { health: 100 };
+        const weapon = Object.freeze({ kind: "bow", damage: 12 });
+        const task = of(weapon);
+        const first = task();
+        const second = task();
 
-        const task = of(link);
-
-        assert.strictEqual(typeof task, "function");
-        assert.strictEqual(await task(), link);
-        assert.strictEqual(await task(), link);
+        assert.ok(first instanceof Promise);
+        assert.ok(second instanceof Promise);
+        assert.strictEqual(await first, weapon);
+        assert.strictEqual(await second, weapon);
     });
 
     it("keeps falsy values", async () => {
@@ -31,7 +33,7 @@ describe("of", () => {
     });
 
     it("adopts a Promise's value", async () => {
-        assert.strictEqual(await of(Promise.resolve("Link"))(), "Link");
+        assert.strictEqual(await of(Promise.resolve("attack"))(), "attack");
     });
 
     it("adopts a thenable only when executed", async () => {
@@ -39,18 +41,18 @@ describe("of", () => {
         const value = {
             then(resolve) {
                 calls += 1;
-                resolve("Zelda");
+                resolve("heal");
             },
         };
         const task = of(value);
 
         assert.strictEqual(calls, 0);
-        assert.strictEqual(await task(), "Zelda");
+        assert.strictEqual(await task(), "heal");
         assert.strictEqual(calls, 1);
     });
 
     it("preserves a Promise rejection", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Item unavailable" };
 
         const task = of(Promise.reject(error));
 

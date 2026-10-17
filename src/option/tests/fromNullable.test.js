@@ -22,12 +22,12 @@ describe("fromNullable", () => {
     });
 
     it("creates new wrappers around the same object", () => {
-        const link = { health: 100 };
-        const first = fromNullable(link);
-        const second = fromNullable(link);
+        const potion = { charges: 3 };
+        const first = fromNullable(potion);
+        const second = fromNullable(potion);
 
-        assert.strictEqual(first.value, link);
-        assert.strictEqual(second.value, link);
+        assert.strictEqual(first.value, potion);
+        assert.strictEqual(second.value, potion);
         assert.notStrictEqual(first, second);
     });
 });

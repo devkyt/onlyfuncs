@@ -24,7 +24,7 @@ describe("getOrElse", () => {
         const recover = getOrElse((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [reason]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], reason);
 
             return "Zelda";

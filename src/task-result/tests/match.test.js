@@ -61,13 +61,20 @@ describe("match", () => {
         assert.strictEqual(calls, 1);
     });
 
-    it("passes falsy payloads and preserves falsy outputs", async () => {
-        const run = match({ onOk: value => value, onErr: value => value });
+    it("passes falsy payloads to the correct handler", async () => {
+        const unwrapSuccess = match({
+            onOk: value => value,
+            onErr: () => assert.fail("onErr should not run"),
+        });
+        const unwrapFailure = match({
+            onOk: () => assert.fail("onOk should not run"),
+            onErr: error => error,
+        });
 
-        assert.strictEqual(await run(ok(0))(), 0);
-        assert.strictEqual(await run(ok(undefined))(), undefined);
-        assert.strictEqual(await run(err(false))(), false);
-        assert.strictEqual(await run(err(undefined))(), undefined);
+        for (const value of [0, false, "", null, undefined, NaN]) {
+            assert.strictEqual(await unwrapSuccess(ok(value))(), value);
+            assert.strictEqual(await unwrapFailure(err(value))(), value);
+        }
     });
 
     it("keeps a returned function as data", async () => {

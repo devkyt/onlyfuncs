@@ -6,13 +6,13 @@ import { some, none, fromResult } from '../index.js';
 
 describe("fromResult", () => {
     it("converts Ok and preserves its payload reference", () => {
-        const link = Object.freeze({ health: 100 });
-        const input = Object.freeze(Result.ok(link));
+        const loot = Object.freeze({ coins: 100 });
+        const input = Object.freeze(Result.ok(loot));
         const result = fromResult(input);
 
-        assert.deepStrictEqual(result, some(link));
-        assert.strictEqual(result.value, link);
-        assert.deepStrictEqual(input, Result.ok(link));
+        assert.deepStrictEqual(result, some(loot));
+        assert.strictEqual(result.value, loot);
+        assert.deepStrictEqual(input, Result.ok(loot));
     });
 
     it("preserves present null and undefined", () => {
@@ -21,7 +21,7 @@ describe("fromResult", () => {
     });
 
     it("discards Err payloads and returns shared none", () => {
-        assert.strictEqual(fromResult(Result.err("No health")), none);
+        assert.strictEqual(fromResult(Result.err("Chest is locked")), none);
         assert.strictEqual(fromResult(Result.err(undefined)), none);
     });
 });

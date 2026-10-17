@@ -5,23 +5,23 @@ import { array } from '../index.js';
 
 describe("array", () => {
     it("combines arrays in order without mutating inputs", () => {
-        const link = Object.freeze({ health: 100 });
-        const zelda = Object.freeze({ health: 80 });
-        const left = Object.freeze([link, null]);
-        const right = Object.freeze([undefined, zelda]);
+        const sword = Object.freeze({ kind: "sword", damage: 12 });
+        const shield = Object.freeze({ kind: "shield", armor: 8 });
+        const left = Object.freeze([sword, null]);
+        const right = Object.freeze([undefined, shield]);
         const result = array.combine(left, right);
 
-        assert.deepStrictEqual(result, [link, null, undefined, zelda]);
-        assert.strictEqual(result[0], link);
-        assert.strictEqual(result[3], zelda);
+        assert.deepStrictEqual(result, [sword, null, undefined, shield]);
+        assert.strictEqual(result[0], sword);
+        assert.strictEqual(result[3], shield);
         assert.notStrictEqual(result, left);
         assert.notStrictEqual(result, right);
-        assert.deepStrictEqual(left, [link, null]);
-        assert.deepStrictEqual(right, [undefined, zelda]);
+        assert.deepStrictEqual(left, [sword, null]);
+        assert.deepStrictEqual(right, [undefined, shield]);
     });
 
     it("allocates a new array when either side is empty", () => {
-        const input = ["Link"];
+        const input = ["potion"];
         const first = array.combine([], input);
         const second = array.combine(input, []);
 

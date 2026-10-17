@@ -13,7 +13,7 @@ describe("match", () => {
             onSome: (...args) => {
                 calls += 1;
 
-                assert.deepStrictEqual(args, [link]);
+                assert.strictEqual(args.length, 1);
                 assert.strictEqual(args[0], link);
 
                 return zelda;

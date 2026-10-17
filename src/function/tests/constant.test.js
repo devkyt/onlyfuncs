@@ -8,29 +8,29 @@ describe("constant", () => {
         assert.strictEqual(constant(1)(), 1);
         assert.strictEqual(constant("link")(), "link");
         assert.strictEqual(constant(true)(), true);
-    })
+    });
 
     it("returns the same simple value with input", () => {
         assert.strictEqual(constant(1)(42), 1);
         assert.strictEqual(constant("link")("zelda"), "link");
         assert.strictEqual(constant(true)(false), true);
-    })
+    });
 
     it("returns the same complex value without input", () => {
-        const ob = {"health": 100};
-        const arr = [1, 2, 3];
+        const hero = { health: 100 };
+        const items = [1, 2, 3];
 
-        assert.strictEqual(constant(ob)(), ob);
-        assert.strictEqual(constant(arr)(), arr);
-    })
+        assert.strictEqual(constant(hero)(), hero);
+        assert.strictEqual(constant(items)(), items);
+    });
 
     it("returns the same complex value with input", () => {
-        const ob = {"health": 100};
-        const arr = [1, 2, 3];
+        const hero = { health: 100 };
+        const items = [1, 2, 3];
 
-        assert.strictEqual(constant(ob)({"health": 50}), ob);
-        assert.strictEqual(constant(arr)([0,0]), arr);
-    })
+        assert.strictEqual(constant(hero)({ health: 50 }), hero);
+        assert.strictEqual(constant(items)([0, 0]), items);
+    });
 
     it("returns falsy values without input", () => {
         assert.strictEqual(constant(0)(), 0);
@@ -39,7 +39,7 @@ describe("constant", () => {
         assert.strictEqual(constant(null)(), null);
         assert.strictEqual(constant(undefined)(), undefined);
         assert.strictEqual(constant()(), undefined);
-    })
+    });
 
     it("returns falsy values with input", () => {
         assert.strictEqual(constant(0)(42), 0);
@@ -48,7 +48,7 @@ describe("constant", () => {
         assert.strictEqual(constant(null)(undefined), null);
         assert.strictEqual(constant(undefined)(null), undefined);
         assert.strictEqual(constant()(null), undefined);
-    })
+    });
 
     it("keeps separately captured values independent", () => {
         const health = constant("health");
@@ -56,5 +56,11 @@ describe("constant", () => {
 
         assert.strictEqual(health(), "health");
         assert.strictEqual(stamina(), "stamina");
-    })
-})
+    });
+
+    it("preserves a function as data without executing it", () => {
+        const castSpell = () => assert.fail("stored spell should not run");
+
+        assert.strictEqual(constant(castSpell)("Goblin"), castSpell);
+    });
+});

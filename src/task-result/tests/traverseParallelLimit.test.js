@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { err, ok, traverseParallelLimit } from '../index.js';
@@ -41,62 +42,59 @@ describe("traverseParallelLimit", () => {
                     });
                 };
             },
-        })(Object.freeze(["Link", "Zelda", "Tingle", "Ganon"]));
+        })(Object.freeze(["Attack", "Heal", "CastSpell", "ChooseItem"]));
 
         assert.deepStrictEqual(transformed, []);
         assert.deepStrictEqual(started, []);
 
         const pending = task();
 
-        assert.deepStrictEqual(transformed, [["Link"], ["Zelda"]]);
-        assert.deepStrictEqual(started, ["Link", "Zelda"]);
-        finishes.get("Zelda")();
+        assert.deepStrictEqual(transformed, [["Attack"], ["Heal"]]);
+        assert.deepStrictEqual(started, ["Attack", "Heal"]);
+        finishes.get("Heal")();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        assert.deepStrictEqual(started, ["Link", "Zelda", "Tingle"]);
+        assert.deepStrictEqual(started, ["Attack", "Heal", "CastSpell"]);
         assert.strictEqual(active, 2);
-        finishes.get("Tingle")();
+        finishes.get("CastSpell")();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        assert.deepStrictEqual(started, ["Link", "Zelda", "Tingle", "Ganon"]);
-        finishes.get("Ganon")();
-        finishes.get("Link")();
+        assert.deepStrictEqual(started, ["Attack", "Heal", "CastSpell", "ChooseItem"]);
+        finishes.get("ChooseItem")();
+        finishes.get("Attack")();
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda", "Tingle", "Ganon"]));
-        assert.deepStrictEqual(transformed, [["Link"], ["Zelda"], ["Tingle"], ["Ganon"]]);
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal", "CastSpell", "ChooseItem"]));
+        assert.deepStrictEqual(transformed, [["Attack"], ["Heal"], ["CastSpell"], ["ChooseItem"]]);
         assert.strictEqual(maximum, 2);
         assert.strictEqual(active, 0);
     });
 
     it("runs sequentially with concurrency one", async () => {
-        let finish;
-        const first = new Promise(resolve => {
-            finish = resolve;
-        });
+        const { promise: first, resolve: finish } = Promise.withResolvers();
         const calls = [];
         const task = traverseParallelLimit({
             concurrency: 1,
             transform: name => {
                 calls.push(name);
 
-                return name === "Link" ? () => first : ok(name);
+                return name === "Attack" ? () => first : ok(name);
             },
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        assert.deepStrictEqual(calls, ["Link"]);
-        finish(Result.ok("Link"));
+        assert.deepStrictEqual(calls, ["Attack"]);
+        finish(Result.ok("Attack"));
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda"]));
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal"]));
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
     });
 
     it("accepts concurrency larger than the input without creating extra work", async () => {
-        const link = Object.freeze({ health: 100 });
+        const attack = Object.freeze({ damage: 100 });
         const calls = [];
         const task = traverseParallelLimit({
             concurrency: Number.MAX_SAFE_INTEGER,
@@ -105,26 +103,20 @@ describe("traverseParallelLimit", () => {
 
                 return ok(value);
             },
-        })(Object.freeze([link, undefined, null]));
+        })(Object.freeze([attack, undefined, null]));
         const result = await task();
 
-        assert.deepStrictEqual(calls, [link, undefined, null]);
-        assert.deepStrictEqual(result, Result.ok([link, undefined, null]));
-        assert.strictEqual(result.value[0], link);
+        assert.deepStrictEqual(calls, [attack, undefined, null]);
+        assert.deepStrictEqual(result, Result.ok([attack, undefined, null]));
+        assert.strictEqual(result.value[0], attack);
     });
 
     it("continues after Err and returns the first Err in input order after all tasks fulfill", async () => {
         const firstError = Object.freeze(Result.err(undefined));
-        let finishFirst;
-        const first = new Promise(resolve => {
-            finishFirst = resolve;
-        });
-        let finishLast;
-        const last = new Promise(resolve => {
-            finishLast = resolve;
-        });
+        const { promise: first, resolve: finishFirst } = Promise.withResolvers();
+        const { promise: last, resolve: finishLast } = Promise.withResolvers();
         const calls = [];
-        const sources = [() => first, err("Zelda missing"), () => last];
+        const sources = [() => first, err("Healing unavailable"), () => last];
         const task = traverseParallelLimit({
             concurrency: 2,
             transform: index => {
@@ -139,16 +131,16 @@ describe("traverseParallelLimit", () => {
             settled = true;
         });
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.deepStrictEqual(calls, [0, 1, 2]);
         assert.strictEqual(settled, false);
         finishFirst(firstError);
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
-        finishLast(Result.ok("Tingle"));
+        finishLast(Result.ok("CastSpell"));
 
         assert.strictEqual(await pending, firstError);
     });
@@ -178,85 +170,76 @@ describe("traverseParallelLimit", () => {
                     finishes.push(resolve);
                 });
             },
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
         const first = task();
         const second = task();
 
-        assert.deepStrictEqual(calls, ["Link", "Link"]);
-        finishes[1](Result.ok("second Link"));
+        assert.deepStrictEqual(calls, ["Attack", "Attack"]);
+        finishes[1](Result.ok("second Attack"));
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        finishes[2](Result.ok("second Zelda"));
+        finishes[2](Result.ok("second Heal"));
         const secondResult = await second;
-        finishes[0](Result.ok("first Link"));
+        finishes[0](Result.ok("first Attack"));
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        finishes[3](Result.ok("first Zelda"));
+        finishes[3](Result.ok("first Heal"));
         const firstResult = await first;
 
-        assert.deepStrictEqual(firstResult, Result.ok(["first Link", "first Zelda"]));
-        assert.deepStrictEqual(secondResult, Result.ok(["second Link", "second Zelda"]));
+        assert.deepStrictEqual(firstResult, Result.ok(["first Attack", "first Heal"]));
+        assert.deepStrictEqual(secondResult, Result.ok(["second Attack", "second Heal"]));
         assert.notStrictEqual(firstResult.value, secondResult.value);
-        assert.deepStrictEqual(calls, ["Link", "Link", "Zelda", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Attack", "Heal", "Heal"]);
     });
 
     it("stops queued work on rejection while handling later failures of started tasks", async () => {
         const error = { reason: "Offline" };
         const lateError = { reason: "Also offline" };
-        let rejectFirst;
-        const first = new Promise((resolve, reject) => {
-            rejectFirst = reject;
-        });
-        let rejectSecond;
-        const second = new Promise((resolve, reject) => {
-            rejectSecond = reject;
-        });
+        const { promise: first, reject: rejectFirst } = Promise.withResolvers();
+        const { promise: second, reject: rejectSecond } = Promise.withResolvers();
         const calls = [];
         const task = traverseParallelLimit({
             concurrency: 2,
             transform: name => {
                 calls.push(name);
 
-                return () => name === "Link" ? first : second;
+                return () => name === "Attack" ? first : second;
             },
-        })(["Link", "Zelda", "Tingle"]);
+        })(["Attack", "Heal", "CastSpell"]);
         const pending = task();
         const rejection = assert.rejects(pending, actual => actual === error);
         rejectFirst(error);
 
         await rejection;
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
         rejectSecond(lateError);
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
     });
 
     it("does not resume queued work when an already-started task fulfills after rejection", async () => {
-        let finish;
-        const source = new Promise(resolve => {
-            finish = resolve;
-        });
+        const { promise: source, resolve: finish } = Promise.withResolvers();
         const calls = [];
         const task = traverseParallelLimit({
             concurrency: 2,
             transform: name => {
                 calls.push(name);
 
-                return () => name === "Link" ? Promise.reject(undefined) : source;
+                return () => name === "Attack" ? Promise.reject(undefined) : source;
             },
-        })(["Link", "Zelda", "Tingle"]);
+        })(["Attack", "Heal", "CastSpell"]);
 
         await assert.rejects(task(), actual => actual === undefined);
-        finish(Result.ok("Zelda"));
+        finish(Result.ok("Heal"));
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
     });
 
     it("turns synchronous transform throws into rejection and stops later transforms", async () => {
@@ -269,10 +252,10 @@ describe("traverseParallelLimit", () => {
 
                 throw error;
             },
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), actual => actual === error);
-        assert.deepStrictEqual(calls, ["Link"]);
+        assert.deepStrictEqual(calls, ["Attack"]);
     });
 
     it("turns synchronous task throws into rejection and stops queued work", async () => {
@@ -286,10 +269,10 @@ describe("traverseParallelLimit", () => {
                     throw undefined;
                 };
             },
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), actual => actual === undefined);
-        assert.deepStrictEqual(calls, ["Link"]);
+        assert.deepStrictEqual(calls, ["Attack"]);
     });
 
     it("starts fresh after a previous execution rejected", async () => {
@@ -302,12 +285,12 @@ describe("traverseParallelLimit", () => {
 
                 return () => fail ? Promise.reject("offline") : Promise.resolve(Result.ok(name));
             },
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), error => error === "offline");
         fail = false;
 
-        assert.deepStrictEqual(await task(), Result.ok(["Link", "Zelda"]));
-        assert.deepStrictEqual(calls, ["Link", "Link", "Zelda"]);
+        assert.deepStrictEqual(await task(), Result.ok(["Attack", "Heal"]));
+        assert.deepStrictEqual(calls, ["Attack", "Attack", "Heal"]);
     });
 });

@@ -65,26 +65,15 @@ describe("fromThrowable", () => {
     });
 
     it("preserves thrown and rejected values that are not Errors", async () => {
-        const text = await fromThrowable(() => {
-            throw "No stamina";
-        })();
+        for (const error of ["Not enough mana", 0, false, null, undefined]) {
+            const thrown = fromThrowable(() => {
+                throw error;
+            });
+            const rejected = fromThrowable(() => Promise.reject(error));
 
-        const zero = await fromThrowable(() => {
-            throw 0;
-        })();
-
-        const nullValue = await fromThrowable(() => {
-            throw null;
-        })();
-
-        const falseValue = await fromThrowable(() => Promise.reject(false))();
-        const undefinedValue = await fromThrowable(() => Promise.reject(undefined))();
-
-        assert.deepStrictEqual(text, Result.err("No stamina"));
-        assert.deepStrictEqual(zero, Result.err(0));
-        assert.deepStrictEqual(nullValue, Result.err(null));
-        assert.deepStrictEqual(falseValue, Result.err(false));
-        assert.deepStrictEqual(undefinedValue, Result.err(undefined));
+            assert.deepStrictEqual(await thrown(), { type: "err", error }, `thrown: ${String(error)}`);
+            assert.deepStrictEqual(await rejected(), { type: "err", error }, `rejected: ${String(error)}`);
+        }
     });
 
     it("treats a returned Error as success", async () => {

@@ -5,11 +5,13 @@ import { ok, err, flatMap } from '../index.js';
 
 describe("flatMap", () => {
     it("returns the callback's Ok without nesting it", () => {
-        const input = ok("Link");
-        const zelda = ok("Zelda");
+        const spell = Object.freeze({ name: "Blizzard", cost: 12 });
+        const input = Object.freeze(ok(spell));
+        const cast = ok({ spell: "Blizzard", target: "Goblin" });
+        const castSpell = value => value.cost <= 20 ? cast : err("Not enough mana");
 
-        assert.strictEqual(flatMap(() => zelda)(input), zelda);
-        assert.deepStrictEqual(input, ok("Link"));
+        assert.strictEqual(flatMap(castSpell)(input), cast);
+        assert.strictEqual(input.value, spell);
     });
 
     it("returns the callback's Err unchanged", () => {
@@ -35,7 +37,7 @@ describe("flatMap", () => {
         const staminaOf = flatMap((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [link]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], link);
 
             return ok(args[0].stamina);

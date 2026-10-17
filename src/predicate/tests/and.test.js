@@ -5,11 +5,12 @@ import { and } from '../index.js';
 
 describe("and", () => {
     it("requires every predicate to pass", () => {
-        const canAttack = and(health => health > 0, health => health < 100);
+        const canAttack = and(hero => hero.weapon !== null, hero => !hero.stunned);
 
-        assert.strictEqual(canAttack(50), true);
-        assert.strictEqual(canAttack(0), false);
-        assert.strictEqual(canAttack(100), false);
+        assert.strictEqual(canAttack({ weapon: "sword", stunned: false }), true);
+        assert.strictEqual(canAttack({ weapon: null, stunned: false }), false);
+        assert.strictEqual(canAttack({ weapon: "sword", stunned: true }), false);
+        assert.strictEqual(canAttack({ weapon: null, stunned: true }), false);
     });
 
     it("returns true with no predicates", () => {

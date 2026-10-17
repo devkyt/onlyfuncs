@@ -5,10 +5,7 @@ import { of, traverse } from '../index.js';
 
 describe("traverse", () => {
     it("starts tasks together and keeps input order", async () => {
-        let finishLink;
-        const linkPromise = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attackPromise, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
 
         const run = traverse(name => {
@@ -17,28 +14,28 @@ describe("traverse", () => {
             return () => {
                 calls.push(`start ${name}`);
 
-                return name === "Link" ? linkPromise : Promise.resolve(80);
+                return name === "Attack" ? attackPromise : Promise.resolve(80);
             };
         });
-        const task = run(Object.freeze(["Link", "Zelda"]));
+        const task = run(Object.freeze(["Attack", "Heal"]));
 
         assert.deepStrictEqual(calls, []);
 
         const pending = task();
 
         assert.deepStrictEqual(calls, [
-            "transform Link", "start Link",
-            "transform Zelda", "start Zelda",
+            "transform Attack", "start Attack",
+            "transform Heal", "start Heal",
         ]);
 
-        // Zelda's Promise is already fulfilled while Link is still pending.
-        finishLink(100);
+        // Heal's Promise is already fulfilled while Attack is still pending.
+        finishAttack(100);
 
         assert.deepStrictEqual(await pending, [100, 80]);
     });
 
     it("passes only the original value and executes each task without arguments", async () => {
-        const link = { health: 100 };
+        const attack = { damage: 100 };
         let transforms = 0;
         let executions = 0;
 
@@ -46,16 +43,16 @@ describe("traverse", () => {
             transforms += 1;
 
             assert.strictEqual(args.length, 1);
-            assert.strictEqual(args[0], link);
+            assert.strictEqual(args[0], attack);
 
             return (...taskArgs) => {
                 executions += 1;
 
                 assert.deepStrictEqual(taskArgs, []);
 
-                return Promise.resolve(args[0].health);
+                return Promise.resolve(args[0].damage);
             };
-        })([link]);
+        })([attack]);
 
         assert.deepStrictEqual(await task(), [100]);
         assert.strictEqual(transforms, 1);
@@ -71,11 +68,11 @@ describe("traverse", () => {
     });
 
     it("preserves falsy values and object references", async () => {
-        const link = { health: 100 };
-        const result = await traverse(of)([0, false, null, undefined, link])();
+        const attack = { damage: 100 };
+        const result = await traverse(of)([0, false, null, undefined, attack])();
 
-        assert.deepStrictEqual(result, [0, false, null, undefined, link]);
-        assert.strictEqual(result[4], link);
+        assert.deepStrictEqual(result, [0, false, null, undefined, attack]);
+        assert.strictEqual(result[4], attack);
     });
 
     it("repeats transforms and tasks with separate outputs on each run", async () => {
@@ -90,7 +87,7 @@ describe("traverse", () => {
 
                 return Promise.resolve(executions);
             };
-        })(["Link"]);
+        })(["Attack"]);
 
         const [first, second] = await Promise.all([task(), task()]);
 
@@ -102,30 +99,30 @@ describe("traverse", () => {
     });
 
     it("preserves a rejection while still starting later tasks", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
         const calls = [];
 
         const task = traverse(value => () => {
             calls.push(value);
 
-            return value === "Link" ? Promise.reject(error) : Promise.resolve(value);
-        })(["Link", "Zelda"]);
+            return value === "Attack" ? Promise.reject(error) : Promise.resolve(value);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), actual => actual === error);
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
     });
 
     it("rejects a transform throw and skips remaining inputs", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
         const calls = [];
 
         const task = traverse(value => {
             calls.push(value);
 
             throw error;
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), actual => actual === error);
-        assert.deepStrictEqual(calls, ["Link"]);
+        assert.deepStrictEqual(calls, ["Attack"]);
     });
 });

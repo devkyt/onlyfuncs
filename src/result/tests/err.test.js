@@ -5,9 +5,9 @@ import { err } from '../index.js';
 
 describe("err", () => {
     it("wraps an error with its own type and error properties", () => {
-        const result = err("No stamina");
+        const result = err("Not enough mana");
 
-        assert.deepStrictEqual(result, { type: "err", error: "No stamina" });
+        assert.deepStrictEqual(result, { type: "err", error: "Not enough mana" });
         assert.strictEqual(Object.hasOwn(result, "type"), true);
         assert.strictEqual(Object.hasOwn(result, "error"), true);
     });
@@ -23,9 +23,9 @@ describe("err", () => {
     });
 
     it("preserves object, array, and Error references", () => {
-        const reason = { stamina: 0 };
-        const reasons = ["No health", "No stamina"];
-        const error = new Error("No health");
+        const reason = { action: "castSpell", mana: 0 };
+        const reasons = ["No weapon equipped", "Not enough mana"];
+        const error = new Error("No weapon equipped");
 
         assert.strictEqual(err(reason).error, reason);
         assert.strictEqual(err(reasons).error, reasons);
@@ -33,7 +33,7 @@ describe("err", () => {
     });
 
     it("creates a fresh wrapper for each call", () => {
-        const reason = { health: 0 };
+        const reason = { action: "attack", weapon: null };
         const first = err(reason);
         const second = err(reason);
 

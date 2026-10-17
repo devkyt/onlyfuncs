@@ -7,20 +7,20 @@ import { fromOption } from '../index.js';
 
 describe("fromOption", () => {
     it("converts Some and preserves its payload without calling onNone", async () => {
-        const link = Object.freeze({ health: 100 });
+        const spell = Object.freeze({ name: "Cure", cost: 8 });
         const run = fromOption(() => {
             assert.fail("onNone should not run");
         });
-        const result = await run(Object.freeze(Option.some(link)))();
+        const result = await run(Object.freeze(Option.some(spell)))();
 
-        assert.deepStrictEqual(result, Result.ok(link));
-        assert.strictEqual(result.value, link);
+        assert.deepStrictEqual(result, Result.ok(spell));
+        assert.strictEqual(result.value, spell);
         assert.deepStrictEqual(await run(Option.some(null))(), Result.ok(null));
         assert.deepStrictEqual(await run(Option.some(undefined))(), Result.ok(undefined));
     });
 
     it("defers onNone and calls it without arguments once per execution", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Spell unavailable" };
         let calls = 0;
         const task = fromOption((...args) => {
             calls += 1;
@@ -49,7 +49,7 @@ describe("fromOption", () => {
     });
 
     it("turns onNone throws into rejections", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Spell unavailable" };
         const task = fromOption(() => {
             throw error;
         })(Option.none);

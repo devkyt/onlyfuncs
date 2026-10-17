@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { fromResult, retry } from '../index.js';
@@ -110,14 +111,14 @@ describe("retry", () => {
 
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 1);
         assert.strictEqual(timers.length, 1);
         assert.strictEqual(timers[0].milliseconds, 500);
         timers[0].callback();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 2);
         assert.strictEqual(timers.length, 2);
@@ -169,14 +170,14 @@ describe("retry", () => {
         });
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 1);
         assert.strictEqual(timers.length, 1);
         assert.strictEqual(timers[0].milliseconds, 0);
         timers[0].callback();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 2);
         assert.strictEqual(timers.length, 2);
@@ -191,10 +192,7 @@ describe("retry", () => {
     });
 
     it("waits for the source before consulting policies or starting another attempt", async t => {
-        let finish;
-        const source = new Promise(resolve => {
-            finish = resolve;
-        });
+        const { promise: source, resolve: finish } = Promise.withResolvers();
         const timers = [];
         t.mock.method(globalThis, "setTimeout", callback => {
             timers.push(callback);
@@ -217,14 +215,14 @@ describe("retry", () => {
         });
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 1);
         assert.strictEqual(policies, 0);
         assert.strictEqual(timers.length, 0);
         finish(Result.err("offline"));
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 1);
         assert.strictEqual(policies, 1);
@@ -258,7 +256,7 @@ describe("retry", () => {
         });
         const first = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         timers[0]();
 
@@ -266,7 +264,7 @@ describe("retry", () => {
 
         const second = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         timers[1]();
 
@@ -376,12 +374,54 @@ describe("retry", () => {
         })(fromResult(result));
         const pending = task();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(timers.length, 1);
         assert.strictEqual(timers[0].milliseconds, 2147483647);
         timers[0].callback();
 
         assert.strictEqual(await pending, result);
+    });
+
+    it("keeps retry limits and delays independent during overlapping executions", async t => {
+        const timers = [];
+        t.mock.method(globalThis, "setTimeout", (callback, milliseconds) => {
+            timers.push({ callback, milliseconds });
+        });
+        const attackError = { action: "attack", reason: "Target moved" };
+        const healError = { action: "heal", reason: "Target moved" };
+        const results = [
+            Result.err(attackError), Result.err(healError),
+            Result.ok("Heal complete"), Result.ok("Attack complete"),
+        ];
+        const policies = [];
+        let calls = 0;
+        const task = retry({
+            attempts: 2,
+            retryOn: (error, attempt) => {
+                policies.push([error, attempt]);
+
+                return true;
+            },
+            delay: () => 10,
+        })(() => Promise.resolve(results[calls++]));
+        const attack = task();
+        const heal = task();
+
+        await setImmediate();
+
+        assert.strictEqual(calls, 2);
+        assert.deepStrictEqual(policies, [[attackError, 1], [healError, 1]]);
+        assert.deepStrictEqual(timers.map(timer => timer.milliseconds), [10, 10]);
+        timers[1].callback();
+
+        assert.strictEqual(await heal, results[2]);
+        assert.strictEqual(calls, 3);
+        timers[0].callback();
+
+        assert.strictEqual(await attack, results[3]);
+        assert.strictEqual(calls, 4);
+        assert.strictEqual(timers.length, 2);
+        assert.strictEqual(policies.length, 2);
     });
 });

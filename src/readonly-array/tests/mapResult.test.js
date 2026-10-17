@@ -6,17 +6,28 @@ import { mapResult } from '../index.js';
 
 describe("mapResult", () => {
     it("transforms every element once and preserves order within both groups", () => {
+        const spells = Object.freeze([
+            Object.freeze({ name: "Cure", cost: 8 }),
+            Object.freeze({ name: "Meteor", cost: 50 }),
+            Object.freeze({ name: "Fireball", cost: 15 }),
+            Object.freeze({ name: "Flare", cost: 40 }),
+        ]);
         const calls = [];
-        const run = mapResult((...args) => {
-            const [value] = args;
+        const castSpells = mapResult((...args) => {
+            const [spell] = args;
             calls.push(args);
 
-            return value > 0 ? Result.ok(value * 10) : Result.err(value);
+            return spell.cost <= 20
+                ? Result.ok(`Cast ${spell.name}`)
+                : Result.err(`${spell.name} needs more mana`);
         });
-        const result = run(Object.freeze([2, -1, 1, 0]));
+        const result = castSpells(spells);
 
-        assert.deepStrictEqual(result, { values: [20, 10], errors: [-1, 0] });
-        assert.deepStrictEqual(calls, [[2], [-1], [1], [0]]);
+        assert.deepStrictEqual(result, {
+            values: ["Cast Cure", "Cast Fireball"],
+            errors: ["Meteor needs more mana", "Flare needs more mana"],
+        });
+        assert.deepStrictEqual(calls, spells.map(spell => [spell]));
     });
 
     it("preserves payload references and nullish values in both groups", () => {

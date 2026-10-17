@@ -13,7 +13,7 @@ describe("match", () => {
             onOk: (...args) => {
                 calls += 1;
 
-                assert.deepStrictEqual(args, [link]);
+                assert.strictEqual(args.length, 1);
                 assert.strictEqual(args[0], link);
 
                 return zelda;
@@ -36,7 +36,7 @@ describe("match", () => {
             onErr: (...args) => {
                 calls += 1;
 
-                assert.deepStrictEqual(args, [reason]);
+                assert.strictEqual(args.length, 1);
                 assert.strictEqual(args[0], reason);
 
                 return zelda;

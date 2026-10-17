@@ -5,12 +5,12 @@ import { string } from '../index.js';
 
 describe("string", () => {
     it("concatenates strings in order", () => {
-        assert.strictEqual(string.combine("Link", " and Zelda"), "Link and Zelda");
+        assert.strictEqual(string.combine("Cast ", "Fireball"), "Cast Fireball");
     });
 
     it("preserves order and handles empty strings", () => {
-        assert.strictEqual(string.combine("Zelda", "Link"), "ZeldaLink");
-        assert.strictEqual(string.combine("", "Link"), "Link");
-        assert.strictEqual(string.combine("Link", ""), "Link");
+        assert.strictEqual(string.combine("Fireball", " ready"), "Fireball ready");
+        assert.strictEqual(string.combine("", "Fireball"), "Fireball");
+        assert.strictEqual(string.combine("Fireball", ""), "Fireball");
     });
 });

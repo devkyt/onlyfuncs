@@ -6,16 +6,16 @@ import { ok } from '../index.js';
 
 describe("ok", () => {
     it("returns a task resolving to Ok with the original payload", async () => {
-        const link = { health: 100 };
+        const spell = { name: "Blizzard", cost: 12 };
 
-        const task = ok(link);
+        const task = ok(spell);
 
         assert.strictEqual(typeof task, "function");
 
         const result = await task();
 
-        assert.deepStrictEqual(result, Result.ok(link));
-        assert.strictEqual(result.value, link);
+        assert.deepStrictEqual(result, Result.ok(spell));
+        assert.strictEqual(result.value, spell);
         assert.strictEqual(await task(), result);
     });
 
@@ -38,7 +38,7 @@ describe("ok", () => {
     });
 
     it("keeps a Promise inside Ok without unwrapping it", async () => {
-        const promise = Promise.resolve("Link");
+        const promise = Promise.resolve("Blizzard");
 
         const result = await ok(promise)();
 

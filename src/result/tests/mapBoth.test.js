@@ -44,16 +44,16 @@ describe("mapBoth", () => {
     });
 
     it("transforms error once and skips onOk", () => {
-        const link = Object.freeze({ health: 100 });
-        const output = { health: 80 };
-        const input = Object.freeze(err(link));
+        const failure = Object.freeze({ action: "castSpell", code: "NO_MANA" });
+        const output = { message: "Use an ether before casting" };
+        const input = Object.freeze(err(failure));
         let calls = 0;
         const run = mapBoth({
             onErr: (...args) => {
                 calls += 1;
 
                 assert.strictEqual(args.length, 1);
-                assert.strictEqual(args[0], link);
+                assert.strictEqual(args[0], failure);
 
                 return output;
             },

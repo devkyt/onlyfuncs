@@ -5,7 +5,7 @@ import { ok, err, flatten } from '../index.js';
 
 describe("flatten", () => {
     it("returns the inner Ok or Err unchanged", () => {
-        const success = ok({ health: 100 });
+        const success = ok({ kind: "potion", healing: 25 });
         const failure = err(undefined);
 
         assert.strictEqual(flatten(Object.freeze(ok(success))), success);
@@ -13,7 +13,7 @@ describe("flatten", () => {
     });
 
     it("preserves an outer Err unchanged", () => {
-        const failure = Object.freeze(err({ reason: "No health" }));
+        const failure = Object.freeze(err({ reason: "Item unavailable" }));
 
         assert.strictEqual(flatten(failure), failure);
     });

@@ -1,27 +1,25 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { err, fromResult, ok, allParallel } from '../index.js';
 
 describe("allParallel", () => {
     it("starts all tasks lazily and preserves input order", async () => {
-        let finishLink;
-        const link = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attack, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
         const tasks = Object.freeze([
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Link");
+                calls.push("Attack");
 
-                return link;
+                return attack;
             },
             () => {
-                calls.push("Zelda");
+                calls.push("Heal");
 
-                return Promise.resolve(Result.ok("Zelda"));
+                return Promise.resolve(Result.ok("Heal"));
             },
         ]);
         const task = allParallel(tasks);
@@ -30,23 +28,20 @@ describe("allParallel", () => {
 
         const pending = task();
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
-        finishLink(Result.ok("Link"));
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
+        finishAttack(Result.ok("Attack"));
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda"]));
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal"]));
     });
 
     it("waits for every fulfillment and returns the first Err in input order", async () => {
-        let finishLink;
-        const link = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attack, resolve: finishAttack } = Promise.withResolvers();
         const firstError = Object.freeze(Result.err(undefined));
-        const secondError = Result.err("Zelda missing");
+        const secondError = Result.err("Healing unavailable");
         let settled = false;
         let laterCalls = 0;
         const tasks = [
-            () => link,
+            () => attack,
             fromResult(secondError),
             () => {
                 laterCalls += 1;
@@ -64,23 +59,20 @@ describe("allParallel", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
         assert.strictEqual(laterCalls, 1);
-        finishLink(firstError);
+        finishAttack(firstError);
 
         assert.strictEqual(await pending, firstError);
     });
 
     it("does not settle an early Err while a later task is pending", async () => {
-        let finishZelda;
-        const zelda = new Promise(resolve => {
-            finishZelda = resolve;
-        });
-        const failure = Result.err("Link missing");
+        const { promise: heal, resolve: finishHeal } = Promise.withResolvers();
+        const failure = Result.err("Attack unavailable");
         let settled = false;
-        const tasks = [fromResult(failure), () => zelda];
+        const tasks = [fromResult(failure), () => heal];
         const pending = allParallel(tasks)();
         pending.then(
             () => {
@@ -91,10 +83,10 @@ describe("allParallel", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
-        finishZelda(Result.ok("Zelda"));
+        finishHeal(Result.ok("Heal"));
 
         assert.strictEqual(await pending, failure);
     });
@@ -110,12 +102,12 @@ describe("allParallel", () => {
     });
 
     it("preserves falsy payloads and references", async () => {
-        const link = Object.freeze({ health: 100 });
-        const tasks = [ok(0), ok(false), ok(null), ok(undefined), ok(link)];
+        const attack = Object.freeze({ damage: 100 });
+        const tasks = [ok(0), ok(false), ok(null), ok(undefined), ok(attack)];
         const result = await allParallel(tasks)();
 
-        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, link]));
-        assert.strictEqual(result.value[4], link);
+        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, attack]));
+        assert.strictEqual(result.value[4], attack);
     });
 
     it("repeats tasks with independent outputs on every execution", async () => {
@@ -135,19 +127,16 @@ describe("allParallel", () => {
     });
 
     it("rejects before other tasks finish without cancelling started work", async () => {
-        const error = { reason: "Missing hero" };
-        let finishZelda;
-        const zelda = new Promise(resolve => {
-            finishZelda = resolve;
-        });
+        const error = { reason: "Action unavailable" };
+        const { promise: heal, resolve: finishHeal } = Promise.withResolvers();
         const calls = [];
         const tasks = [
             () => Promise.reject(error),
             () => {
-                calls.push("start Zelda");
+                calls.push("start Heal");
 
-                return zelda.then(value => {
-                    calls.push("finish Zelda");
+                return heal.then(value => {
+                    calls.push("finish Heal");
 
                     return Result.ok(value);
                 });
@@ -156,17 +145,17 @@ describe("allParallel", () => {
         const pending = allParallel(tasks)();
 
         await assert.rejects(pending, actual => actual === error);
-        assert.deepStrictEqual(calls, ["start Zelda"]);
-        finishZelda("Zelda");
-        await new Promise(resolve => setImmediate(resolve));
+        assert.deepStrictEqual(calls, ["start Heal"]);
+        finishHeal("Heal");
+        await setImmediate();
 
-        assert.deepStrictEqual(calls, ["start Zelda", "finish Zelda"]);
+        assert.deepStrictEqual(calls, ["start Heal", "finish Heal"]);
     });
 
     it("propagates rejection even if another task fulfills with Err", async () => {
         const error = { reason: "Connection lost" };
         const tasks = [
-            err("No health"),
+            err("No damage"),
             () => Promise.reject(error),
         ];
         const task = allParallel(tasks);
@@ -175,7 +164,7 @@ describe("allParallel", () => {
     });
 
     it("rejects a synchronous task throw and skips later tasks", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
         const tasks = [
             () => {
                 throw error;

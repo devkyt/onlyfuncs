@@ -5,23 +5,20 @@ import { of, all } from '../index.js';
 
 describe("all", () => {
     it("starts tasks together and keeps input order", async () => {
-        let finishLink;
-        const linkPromise = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attackPromise, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
         const tasks = Object.freeze([
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Link");
+                calls.push("Attack");
 
-                return linkPromise;
+                return attackPromise;
             },
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Zelda");
+                calls.push("Heal");
 
-                return Promise.resolve("Zelda");
+                return Promise.resolve("Heal");
             },
         ]);
         const task = all(tasks);
@@ -30,12 +27,12 @@ describe("all", () => {
 
         const pending = task();
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
 
-        // Zelda's Promise is already fulfilled while Link is still pending.
-        finishLink("Link");
+        // Heal's Promise is already fulfilled while Attack is still pending.
+        finishAttack("Attack");
 
-        assert.deepStrictEqual(await pending, ["Link", "Zelda"]);
+        assert.deepStrictEqual(await pending, ["Attack", "Heal"]);
     });
 
     it("resolves empty input to an empty array", async () => {
@@ -43,14 +40,14 @@ describe("all", () => {
     });
 
     it("preserves falsy values and object references", async () => {
-        const link = { health: 100 };
+        const attack = { damage: 100 };
 
-        const task = all([of(0), of(false), of(null), of(undefined), of(link)]);
+        const task = all([of(0), of(false), of(null), of(undefined), of(attack)]);
 
         const result = await task();
 
-        assert.deepStrictEqual(result, [0, false, null, undefined, link]);
-        assert.strictEqual(result[4], link);
+        assert.deepStrictEqual(result, [0, false, null, undefined, attack]);
+        assert.strictEqual(result[4], attack);
     });
 
     it("reruns tasks with separate outputs for overlapping executions", async () => {
@@ -72,34 +69,31 @@ describe("all", () => {
     });
 
     it("rejects without cancelling other started work", async () => {
-        const error = { reason: "Missing hero" };
-        let finishZelda;
-        const zeldaPromise = new Promise(resolve => {
-            finishZelda = resolve;
-        });
+        const error = { reason: "Action unavailable" };
+        const { promise: healPromise, resolve: finishHeal } = Promise.withResolvers();
         const calls = [];
-        let zeldaWork;
+        let healWork;
 
         const task = all([
             () => Promise.reject(error),
             () => {
                 calls.push("started");
-                zeldaWork = zeldaPromise.then(value => {
+                healWork = healPromise.then(value => {
                     calls.push("finished");
 
                     return value;
                 });
 
-                return zeldaWork;
+                return healWork;
             },
         ]);
 
         await assert.rejects(task(), actual => actual === error);
         assert.deepStrictEqual(calls, ["started"]);
 
-        finishZelda("Zelda");
+        finishHeal("Heal");
 
-        assert.strictEqual(await zeldaWork, "Zelda");
+        assert.strictEqual(await healWork, "Heal");
         assert.deepStrictEqual(calls, ["started", "finished"]);
     });
 });

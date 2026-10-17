@@ -6,16 +6,21 @@ import { mapOption } from '../index.js';
 
 describe("mapOption", () => {
     it("transforms every element once and collects Some values in order", () => {
+        const items = Object.freeze([
+            Object.freeze({ name: "potion", charges: 2 }),
+            Object.freeze({ name: "ether", charges: 0 }),
+            Object.freeze({ name: "antidote", charges: 1 }),
+        ]);
         const calls = [];
-        const run = mapOption((...args) => {
-            const [value] = args;
+        const chooseItems = mapOption((...args) => {
+            const [item] = args;
             calls.push(args);
 
-            return value > 0 ? Option.some(value * 10) : Option.none;
+            return item.charges > 0 ? Option.some(item.name) : Option.none;
         });
 
-        assert.deepStrictEqual(run(Object.freeze([2, 0, 1])), [20, 10]);
-        assert.deepStrictEqual(calls, [[2], [0], [1]]);
+        assert.deepStrictEqual(chooseItems(items), ["potion", "antidote"]);
+        assert.deepStrictEqual(calls, items.map(item => [item]));
     });
 
     it("preserves references and present nullish and falsy payloads", () => {

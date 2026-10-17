@@ -1,27 +1,25 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import * as Result from '../../result/index.js';
 import { err, fromResult, ok, traverseParallel } from '../index.js';
 
 describe("traverseParallel", () => {
     it("starts all tasks lazily and preserves input order", async () => {
-        let finishLink;
-        const link = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attack, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
         const tasks = Object.freeze([
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Link");
+                calls.push("Attack");
 
-                return link;
+                return attack;
             },
             () => {
-                calls.push("Zelda");
+                calls.push("Heal");
 
-                return Promise.resolve(Result.ok("Zelda"));
+                return Promise.resolve(Result.ok("Heal"));
             },
         ]);
         const task = traverseParallel(task => task)(tasks);
@@ -30,23 +28,20 @@ describe("traverseParallel", () => {
 
         const pending = task();
 
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
-        finishLink(Result.ok("Link"));
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
+        finishAttack(Result.ok("Attack"));
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda"]));
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal"]));
     });
 
     it("waits for every fulfillment and returns the first Err in input order", async () => {
-        let finishLink;
-        const link = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attack, resolve: finishAttack } = Promise.withResolvers();
         const firstError = Object.freeze(Result.err(undefined));
-        const secondError = Result.err("Zelda missing");
+        const secondError = Result.err("Healing unavailable");
         let settled = false;
         let laterCalls = 0;
         const tasks = [
-            () => link,
+            () => attack,
             fromResult(secondError),
             () => {
                 laterCalls += 1;
@@ -64,23 +59,20 @@ describe("traverseParallel", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
         assert.strictEqual(laterCalls, 1);
-        finishLink(firstError);
+        finishAttack(firstError);
 
         assert.strictEqual(await pending, firstError);
     });
 
     it("does not settle an early Err while a later task is pending", async () => {
-        let finishZelda;
-        const zelda = new Promise(resolve => {
-            finishZelda = resolve;
-        });
-        const failure = Result.err("Link missing");
+        const { promise: heal, resolve: finishHeal } = Promise.withResolvers();
+        const failure = Result.err("Attack unavailable");
         let settled = false;
-        const tasks = [fromResult(failure), () => zelda];
+        const tasks = [fromResult(failure), () => heal];
         const pending = traverseParallel(task => task)(tasks)();
         pending.then(
             () => {
@@ -91,10 +83,10 @@ describe("traverseParallel", () => {
             },
         );
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
-        finishZelda(Result.ok("Zelda"));
+        finishHeal(Result.ok("Heal"));
 
         assert.strictEqual(await pending, failure);
     });
@@ -110,13 +102,13 @@ describe("traverseParallel", () => {
     });
 
     it("preserves falsy payloads and references", async () => {
-        const link = Object.freeze({ health: 100 });
-        const values = Object.freeze([0, false, null, undefined, link]);
+        const attack = Object.freeze({ damage: 100 });
+        const values = Object.freeze([0, false, null, undefined, attack]);
         const task = traverseParallel(ok)(values);
         const result = await task();
 
-        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, link]));
-        assert.strictEqual(result.value[4], link);
+        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, attack]));
+        assert.strictEqual(result.value[4], attack);
     });
 
     it("repeats tasks with independent outputs on every execution", async () => {
@@ -126,7 +118,7 @@ describe("traverseParallel", () => {
 
             return Promise.resolve(Result.ok(calls));
         };
-        const task = traverseParallel(() => source)(["Link"]);
+        const task = traverseParallel(() => source)(["Attack"]);
         const [first, second] = await Promise.all([task(), task()]);
 
         assert.deepStrictEqual(first, Result.ok([1]));
@@ -136,19 +128,16 @@ describe("traverseParallel", () => {
     });
 
     it("rejects before other tasks finish without cancelling started work", async () => {
-        const error = { reason: "Missing hero" };
-        let finishZelda;
-        const zelda = new Promise(resolve => {
-            finishZelda = resolve;
-        });
+        const error = { reason: "Action unavailable" };
+        const { promise: heal, resolve: finishHeal } = Promise.withResolvers();
         const calls = [];
         const tasks = [
             () => Promise.reject(error),
             () => {
-                calls.push("start Zelda");
+                calls.push("start Heal");
 
-                return zelda.then(value => {
-                    calls.push("finish Zelda");
+                return heal.then(value => {
+                    calls.push("finish Heal");
 
                     return Result.ok(value);
                 });
@@ -157,17 +146,17 @@ describe("traverseParallel", () => {
         const pending = traverseParallel(task => task)(tasks)();
 
         await assert.rejects(pending, actual => actual === error);
-        assert.deepStrictEqual(calls, ["start Zelda"]);
-        finishZelda("Zelda");
-        await new Promise(resolve => setImmediate(resolve));
+        assert.deepStrictEqual(calls, ["start Heal"]);
+        finishHeal("Heal");
+        await setImmediate();
 
-        assert.deepStrictEqual(calls, ["start Zelda", "finish Zelda"]);
+        assert.deepStrictEqual(calls, ["start Heal", "finish Heal"]);
     });
 
     it("propagates rejection even if another task fulfills with Err", async () => {
         const error = { reason: "Connection lost" };
         const tasks = [
-            err("No health"),
+            err("No damage"),
             () => Promise.reject(error),
         ];
         const task = traverseParallel(task => task)(tasks);
@@ -176,7 +165,7 @@ describe("traverseParallel", () => {
     });
 
     it("rejects a synchronous task throw and skips later tasks", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
         const tasks = [
             () => {
                 throw error;
@@ -191,37 +180,34 @@ describe("traverseParallel", () => {
     });
 
     it("defers and repeats transforms with only the original input", async () => {
-        const link = Object.freeze({ health: 100 });
+        const attack = Object.freeze({ damage: 100 });
         const calls = [];
         const task = traverseParallel((...args) => {
             assert.strictEqual(args.length, 1);
-            assert.strictEqual(args[0], link);
+            assert.strictEqual(args[0], attack);
             calls.push("transform");
 
             return () => {
                 calls.push("task");
 
-                return Promise.resolve(Result.ok(link));
+                return Promise.resolve(Result.ok(attack));
             };
-        })(Object.freeze([link]));
+        })(Object.freeze([attack]));
 
         assert.deepStrictEqual(calls, []);
 
         const first = await task();
         const second = await task();
 
-        assert.deepStrictEqual(first, Result.ok([link]));
-        assert.strictEqual(first.value[0], link);
-        assert.deepStrictEqual(second, Result.ok([link]));
-        assert.strictEqual(second.value[0], link);
+        assert.deepStrictEqual(first, Result.ok([attack]));
+        assert.strictEqual(first.value[0], attack);
+        assert.deepStrictEqual(second, Result.ok([attack]));
+        assert.strictEqual(second.value[0], attack);
         assert.deepStrictEqual(calls, ["transform", "task", "transform", "task"]);
     });
 
     it("starts transforms in input order without waiting for earlier tasks", async () => {
-        let finishLink;
-        const link = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attack, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
         const task = traverseParallel(name => {
             calls.push(`transform ${name}`);
@@ -229,17 +215,17 @@ describe("traverseParallel", () => {
             return () => {
                 calls.push(`start ${name}`);
 
-                return name === "Link" ? link : Promise.resolve(Result.ok(name));
+                return name === "Attack" ? attack : Promise.resolve(Result.ok(name));
             };
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
         const pending = task();
 
         assert.deepStrictEqual(calls, [
-            "transform Link", "start Link", "transform Zelda", "start Zelda",
+            "transform Attack", "start Attack", "transform Heal", "start Heal",
         ]);
-        finishLink(Result.ok("Link"));
+        finishAttack(Result.ok("Attack"));
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda"]));
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal"]));
     });
 
     it("skips transforms for empty input", async () => {
@@ -251,15 +237,15 @@ describe("traverseParallel", () => {
     });
 
     it("rejects a transform throw and skips remaining inputs", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
         const calls = [];
         const task = traverseParallel(value => {
             calls.push(value);
 
             throw error;
-        })(["Link", "Zelda"]);
+        })(["Attack", "Heal"]);
 
         await assert.rejects(task(), actual => actual === error);
-        assert.deepStrictEqual(calls, ["Link"]);
+        assert.deepStrictEqual(calls, ["Attack"]);
     });
 });

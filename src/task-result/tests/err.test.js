@@ -6,7 +6,7 @@ import { err } from '../index.js';
 
 describe("err", () => {
     it("fulfills with Err and preserves its identity on repeat execution", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Spell unavailable" };
 
         const task = err(error);
 
@@ -38,7 +38,7 @@ describe("err", () => {
     });
 
     it("keeps an Error as a fulfilled Err instead of rejecting", async () => {
-        const error = new Error("No stamina");
+        const error = new Error("Not enough mana");
 
         const result = await err(error)();
 

@@ -5,9 +5,11 @@ import { curry2 } from '../index.js';
 
 describe("curry2", () => {
     it("preserves argument order", () => {
-        const subtract = curry2((a, b) => a - b);
+        const chooseItem = curry2((slot, inventory) => inventory[slot]);
+        const potion = Object.freeze({ kind: "potion", healing: 25 });
+        const inventory = Object.freeze(["sword", potion]);
 
-        assert.strictEqual(subtract(10)(3), 7);
+        assert.strictEqual(chooseItem(1)(inventory), potion);
     });
 
     it("reuses a partially applied function", () => {

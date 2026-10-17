@@ -5,11 +5,11 @@ import { not } from '../index.js';
 
 describe("not", () => {
     it("reverses true and false", () => {
-        const isHealthy = health => health > 0;
-        const isDefeated = not(isHealthy);
+        const isCursed = item => item.cursed;
+        const canEquip = not(isCursed);
 
-        assert.strictEqual(isDefeated(100), false);
-        assert.strictEqual(isDefeated(0), true);
+        assert.strictEqual(canEquip({ cursed: true }), false);
+        assert.strictEqual(canEquip({ cursed: false }), true);
     });
 
     it("waits for a value, then calls the predicate once per use", () => {

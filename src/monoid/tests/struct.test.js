@@ -5,55 +5,55 @@ import { struct, sum, product, string, array } from '../index.js';
 
 describe("struct", () => {
     it("combines specified fields without changing inputs", () => {
-        const monoid = struct(Object.freeze({ health: sum, names: array }));
-        const left = Object.freeze({ health: 10, names: Object.freeze(["Link"]), ignored: true });
-        const right = Object.freeze({ health: 20, names: Object.freeze(["Zelda"]) });
+        const monoid = struct(Object.freeze({ damage: sum, actions: array }));
+        const left = Object.freeze({ damage: 10, actions: Object.freeze(["Slash"]), ignored: true });
+        const right = Object.freeze({ damage: 20, actions: Object.freeze(["Fireball"]) });
         const first = monoid.combine(left, right);
         const second = monoid.combine(left, right);
 
-        assert.deepStrictEqual(first, { health: 30, names: ["Link", "Zelda"] });
+        assert.deepStrictEqual(first, { damage: 30, actions: ["Slash", "Fireball"] });
         assert.deepStrictEqual(second, first);
         assert.notStrictEqual(first, second);
-        assert.notStrictEqual(first.names, left.names);
-        assert.notStrictEqual(first.names, second.names);
+        assert.notStrictEqual(first.actions, left.actions);
+        assert.notStrictEqual(first.actions, second.actions);
     });
 
     it("provides left and right identities for the supplied field monoids", () => {
-        const monoid = struct({ health: sum, name: string, items: array });
-        const link = Object.freeze({ health: 100, name: "Link", items: Object.freeze(["sword"]) });
+        const monoid = struct({ damage: sum, log: string, effects: array });
+        const report = Object.freeze({ damage: 100, log: "Slash", effects: Object.freeze(["critical hit"]) });
 
-        assert.deepStrictEqual(monoid.empty(), { health: 0, name: "", items: [] });
-        assert.deepStrictEqual(monoid.combine(monoid.empty(), link), link);
-        assert.deepStrictEqual(monoid.combine(link, monoid.empty()), link);
+        assert.deepStrictEqual(monoid.empty(), { damage: 0, log: "", effects: [] });
+        assert.deepStrictEqual(monoid.combine(monoid.empty(), report), report);
+        assert.deepStrictEqual(monoid.combine(report, monoid.empty()), report);
     });
 
     it("creates fresh identity records and mutable field identities", () => {
-        const monoid = struct({ items: array });
+        const monoid = struct({ effects: array });
         const first = monoid.empty();
         const second = monoid.empty();
 
         assert.notStrictEqual(first, second);
-        assert.notStrictEqual(first.items, second.items);
-        first.items.push("sword");
+        assert.notStrictEqual(first.effects, second.effects);
+        first.effects.push("critical hit");
 
-        assert.deepStrictEqual(second, { items: [] });
+        assert.deepStrictEqual(second, { effects: [] });
     });
 
     it("calls each empty operation once per invocation in schema order", () => {
         const calls = [];
         const monoid = struct({
-            health: {
+            damage: {
                 combine: sum.combine,
                 empty: (...args) => {
-                    calls.push(["health", ...args]);
+                    calls.push(["damage", ...args]);
 
                     return 0;
                 },
             },
-            name: {
+            log: {
                 combine: string.combine,
                 empty: (...args) => {
-                    calls.push(["name", ...args]);
+                    calls.push(["log", ...args]);
 
                     return "";
                 },
@@ -61,23 +61,23 @@ describe("struct", () => {
         });
 
         assert.deepStrictEqual(calls, []);
-        assert.deepStrictEqual(monoid.empty(), { health: 0, name: "" });
-        assert.deepStrictEqual(monoid.empty(), { health: 0, name: "" });
-        assert.deepStrictEqual(calls, [["health"], ["name"], ["health"], ["name"]]);
+        assert.deepStrictEqual(monoid.empty(), { damage: 0, log: "" });
+        assert.deepStrictEqual(monoid.empty(), { damage: 0, log: "" });
+        assert.deepStrictEqual(calls, [["damage"], ["log"], ["damage"], ["log"]]);
     });
 
     it("captures only own enumerable string schema entries", () => {
         const fields = Object.create({ inherited: sum });
-        fields.health = sum;
+        fields.damage = sum;
         fields[Symbol("ignored")] = sum;
         Object.defineProperty(fields, "hidden", { value: sum });
         const monoid = struct(fields);
 
-        fields.health = product;
-        fields.stamina = sum;
+        fields.damage = product;
+        fields.hits = sum;
 
-        assert.deepStrictEqual(monoid.empty(), { health: 0 });
-        assert.deepStrictEqual(monoid.combine({ health: 10 }, { health: 20 }), { health: 30 });
+        assert.deepStrictEqual(monoid.empty(), { damage: 0 });
+        assert.deepStrictEqual(monoid.combine({ damage: 10 }, { damage: 20 }), { damage: 30 });
     });
 
     it("treats special keys as own data properties in empty and combined records", () => {
@@ -97,7 +97,7 @@ describe("struct", () => {
         const monoid = struct({});
         const first = monoid.empty();
         const second = monoid.empty();
-        const combined = monoid.combine({ health: 10 }, { health: 20 });
+        const combined = monoid.combine({ damage: 10 }, { damage: 20 });
 
         assert.deepStrictEqual(first, {});
         assert.deepStrictEqual(second, {});
@@ -109,13 +109,13 @@ describe("struct", () => {
     it("propagates empty failures and skips later fields", () => {
         const error = { reason: "Cannot create identity" };
         const monoid = struct({
-            health: {
+            damage: {
                 combine: sum.combine,
                 empty: () => {
                     throw error;
                 },
             },
-            name: {
+            log: {
                 combine: string.combine,
                 empty: () => assert.fail("later field should not run"),
             },
@@ -127,7 +127,7 @@ describe("struct", () => {
     it("propagates combine failures", () => {
         const error = { reason: "Cannot combine" };
         const monoid = struct({
-            health: {
+            damage: {
                 combine: () => {
                     throw error;
                 },
@@ -135,6 +135,6 @@ describe("struct", () => {
             },
         });
 
-        assert.throws(() => monoid.combine({ health: 1 }, { health: 2 }), actual => actual === error);
+        assert.throws(() => monoid.combine({ damage: 1 }, { damage: 2 }), actual => actual === error);
     });
 });

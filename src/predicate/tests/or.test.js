@@ -5,11 +5,12 @@ import { or } from '../index.js';
 
 describe("or", () => {
     it("requires at least one predicate to pass", () => {
-        const hasPower = or(value => value > 50, value => value === 10);
+        const canHeal = or(hero => hero.potions > 0, hero => hero.knowsCure);
 
-        assert.strictEqual(hasPower(100), true);
-        assert.strictEqual(hasPower(10), true);
-        assert.strictEqual(hasPower(0), false);
+        assert.strictEqual(canHeal({ potions: 1, knowsCure: false }), true);
+        assert.strictEqual(canHeal({ potions: 0, knowsCure: true }), true);
+        assert.strictEqual(canHeal({ potions: 1, knowsCure: true }), true);
+        assert.strictEqual(canHeal({ potions: 0, knowsCure: false }), false);
     });
 
     it("returns false with no predicates", () => {

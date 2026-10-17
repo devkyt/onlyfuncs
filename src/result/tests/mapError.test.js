@@ -30,7 +30,7 @@ describe("mapError", () => {
         const explain = mapError((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [reason]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], reason);
 
             return "No stamina";

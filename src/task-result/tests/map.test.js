@@ -89,4 +89,13 @@ describe("map", () => {
         assert.strictEqual(result.type, "ok");
         assert.strictEqual(result.value, payload);
     });
+
+    it("keeps a Promise returned by the transform inside Ok", async () => {
+        const loadItem = Promise.resolve({ kind: "potion", healing: 25 });
+        const task = map(() => loadItem)(ok("potion"));
+        const result = await task();
+
+        assert.deepStrictEqual(result, { type: "ok", value: loadItem });
+        assert.strictEqual(result.value, loadItem);
+    });
 });

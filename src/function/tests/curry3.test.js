@@ -5,12 +5,12 @@ import { curry3 } from '../index.js';
 
 describe("curry3", () => {
     it("preserves argument order", () => {
-        const format = curry3((level, scope, message) =>
-            `[${level}] ${scope}: ${message}`);
+        const castSpell = curry3((caster, spell, target) =>
+            `${caster} casts ${spell} on ${target}`);
 
         assert.strictEqual(
-            format("ERROR")("database")("Connection failed"),
-            "[ERROR] database: Connection failed",
+            castSpell("Vivi")("Blizzard")("Goblin"),
+            "Vivi casts Blizzard on Goblin",
         );
     });
 

@@ -20,10 +20,12 @@ describe("fromThrowable", () => {
     });
 
     it("supports functions with parameters through a wrapper", () => {
-        const remainingHealth = (health, damage) => health - damage;
-        const result = fromThrowable(() => remainingHealth(100, 10));
+        const chooseItem = (inventory, slot) => inventory[slot];
+        const potion = Object.freeze({ kind: "potion", healing: 25 });
+        const result = fromThrowable(() => chooseItem(["sword", potion], 1));
 
-        assert.deepStrictEqual(result, ok(90));
+        assert.deepStrictEqual(result, { type: "ok", value: potion });
+        assert.strictEqual(result.value, potion);
     });
 
     it("keeps falsy return values inside Ok", () => {
@@ -62,31 +64,13 @@ describe("fromThrowable", () => {
     });
 
     it("catches thrown strings, numbers, and other simple values", () => {
-        const text = fromThrowable(() => {
-            throw "No stamina";
-        });
+        for (const error of ["Not enough mana", 0, false, null, undefined]) {
+            const result = fromThrowable(() => {
+                throw error;
+            });
 
-        const zero = fromThrowable(() => {
-            throw 0;
-        });
-
-        const falseValue = fromThrowable(() => {
-            throw false;
-        });
-
-        const nullValue = fromThrowable(() => {
-            throw null;
-        });
-
-        const undefinedValue = fromThrowable(() => {
-            throw undefined;
-        });
-
-        assert.deepStrictEqual(text, err("No stamina"));
-        assert.deepStrictEqual(zero, err(0));
-        assert.deepStrictEqual(falseValue, err(false));
-        assert.deepStrictEqual(nullValue, err(null));
-        assert.deepStrictEqual(undefinedValue, err(undefined));
+            assert.deepStrictEqual(result, { type: "err", error }, `thrown: ${String(error)}`);
+        }
     });
 
     it("returns Ok when an Error is returned instead of thrown", () => {

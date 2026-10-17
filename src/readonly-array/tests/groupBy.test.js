@@ -5,23 +5,26 @@ import { groupBy } from '../index.js';
 
 describe("groupBy", () => {
     it("preserves first-seen key order and element order within each group", () => {
-        const link = Object.freeze({ name: "Link", health: 100 });
-        const zelda = Object.freeze({ name: "Zelda", health: 0 });
-        const tingle = Object.freeze({ name: "Tingle", health: 100 });
+        const sword = Object.freeze({ name: "sword", slot: "hand" });
+        const helmet = Object.freeze({ name: "helmet", slot: "head" });
+        const shield = Object.freeze({ name: "shield", slot: "hand" });
         const calls = [];
-        const run = groupBy((...args) => {
-            const [hero] = args;
+        const groupEquipment = groupBy((...args) => {
+            const [item] = args;
             calls.push(args);
 
-            return hero.health;
+            return item.slot;
         });
-        const result = run(Object.freeze([link, zelda, tingle]));
+        const result = groupEquipment(Object.freeze([sword, helmet, shield]));
 
-        assert.ok(result instanceof Map);
-        assert.deepStrictEqual([...result], [[100, [link, tingle]], [0, [zelda]]]);
-        assert.deepStrictEqual(calls, [[link], [zelda], [tingle]]);
-        assert.strictEqual(result.get(100)[0], link);
-        assert.strictEqual(result.get(100)[1], tingle);
+        assert.deepStrictEqual(result, new Map([
+            ["hand", [sword, shield]],
+            ["head", [helmet]],
+        ]));
+        assert.deepStrictEqual(calls, [[sword], [helmet], [shield]]);
+        assert.strictEqual(result.get("hand")[0], sword);
+        assert.strictEqual(result.get("head")[0], helmet);
+        assert.strictEqual(result.get("hand")[1], shield);
     });
 
     it("uses Map equality for object, NaN, and zero keys", () => {

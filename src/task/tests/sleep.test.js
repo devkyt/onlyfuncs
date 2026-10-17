@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import { sleep } from '../index.js';
 
@@ -19,7 +20,7 @@ describe("sleep", () => {
             settled = true;
         });
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.ok(pending instanceof Promise);
         assert.strictEqual(timers.length, 1);
@@ -75,7 +76,7 @@ describe("sleep", () => {
         const invalid = [-1, 0.5, 2147483648, NaN, Infinity, -Infinity, "1", null, undefined, false];
 
         for (const milliseconds of invalid) {
-            assert.throws(() => sleep(milliseconds), RangeError);
+            assert.throws(() => sleep(milliseconds), RangeError, `delay: ${String(milliseconds)}`);
         }
     });
 });

@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import { of, flatten } from '../index.js';
 
@@ -27,10 +28,7 @@ describe("flatten", () => {
     });
 
     it("waits for the outer task before starting the inner task", async () => {
-        let finish;
-        const outer = new Promise(resolve => {
-            finish = resolve;
-        });
+        const { promise: outer, resolve: finish } = Promise.withResolvers();
         let calls = 0;
         const inner = () => {
             calls += 1;
@@ -39,7 +37,7 @@ describe("flatten", () => {
         };
         const pending = flatten(() => outer)();
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(calls, 0);
         finish(inner);

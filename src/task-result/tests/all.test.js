@@ -6,23 +6,20 @@ import { ok, all } from '../index.js';
 
 describe("all", () => {
     it("starts lazily and waits for each task before starting the next", async () => {
-        let finishLink;
-        const linkPromise = new Promise(resolve => {
-            finishLink = resolve;
-        });
+        const { promise: attackPromise, resolve: finishAttack } = Promise.withResolvers();
         const calls = [];
         const tasks = Object.freeze([
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Link");
+                calls.push("Attack");
 
-                return linkPromise;
+                return attackPromise;
             },
             (...args) => {
                 assert.deepStrictEqual(args, []);
-                calls.push("Zelda");
+                calls.push("Heal");
 
-                return Promise.resolve(Result.ok("Zelda"));
+                return Promise.resolve(Result.ok("Heal"));
             },
         ]);
         const task = all(tasks);
@@ -31,11 +28,11 @@ describe("all", () => {
 
         const pending = task();
 
-        assert.deepStrictEqual(calls, ["Link"]);
-        finishLink(Result.ok("Link"));
+        assert.deepStrictEqual(calls, ["Attack"]);
+        finishAttack(Result.ok("Attack"));
 
-        assert.deepStrictEqual(await pending, Result.ok(["Link", "Zelda"]));
-        assert.deepStrictEqual(calls, ["Link", "Zelda"]);
+        assert.deepStrictEqual(await pending, Result.ok(["Attack", "Heal"]));
+        assert.deepStrictEqual(calls, ["Attack", "Heal"]);
     });
 
     it("returns the first Err unchanged and skips later tasks", async () => {
@@ -43,7 +40,7 @@ describe("all", () => {
         let calls = 0;
 
         const task = all([
-            ok("Link"),
+            ok("Attack"),
             () => {
                 calls += 1;
 
@@ -63,11 +60,11 @@ describe("all", () => {
     });
 
     it("preserves falsy values and object references", async () => {
-        const link = { health: 100 };
-        const result = await all([ok(0), ok(false), ok(null), ok(undefined), ok(link)])();
+        const attack = { damage: 100 };
+        const result = await all([ok(0), ok(false), ok(null), ok(undefined), ok(attack)])();
 
-        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, link]));
-        assert.strictEqual(result.value[4], link);
+        assert.deepStrictEqual(result, Result.ok([0, false, null, undefined, attack]));
+        assert.strictEqual(result.value[4], attack);
     });
 
     it("reruns tasks with separate outputs for overlapping executions", async () => {
@@ -78,21 +75,21 @@ describe("all", () => {
 
             return Promise.resolve(Result.ok(calls));
         };
-        const task = all([source, ok("Zelda")]);
+        const task = all([source, ok("Heal")]);
 
         const [first, second] = await Promise.all([task(), task()]);
 
         assert.strictEqual(calls, 2);
-        assert.deepStrictEqual(first, Result.ok([1, "Zelda"]));
-        assert.deepStrictEqual(second, Result.ok([2, "Zelda"]));
+        assert.deepStrictEqual(first, Result.ok([1, "Heal"]));
+        assert.deepStrictEqual(second, Result.ok([2, "Heal"]));
         assert.notStrictEqual(first.value, second.value);
     });
 
     it("preserves rejection and skips later tasks", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Action unavailable" };
 
         const task = all([
-            ok("Link"),
+            ok("Attack"),
             () => Promise.reject(error),
             () => {
                 assert.fail("later task should not run");
@@ -103,7 +100,7 @@ describe("all", () => {
     });
 
     it("rejects a synchronous task throw and skips later tasks", async () => {
-        const error = { reason: "No stamina" };
+        const error = { reason: "Action interrupted" };
 
         const task = all([
             () => {

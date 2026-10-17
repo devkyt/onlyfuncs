@@ -1,4 +1,4 @@
-# Onlyfuncs
+# OnlyFuncs
 
 Lightweight and hopefully ready to use library for functional programming in JavaScript. 
 It was written out of curiosity and because someone got really bored with OOP.
@@ -73,3 +73,4 @@ console.log(racer('{"name": "Bowser", "power": "fireball"}')); // "Select: Bowse
 ```
 
 
+## Modules

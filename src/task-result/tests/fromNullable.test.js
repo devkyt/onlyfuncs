@@ -6,14 +6,14 @@ import { fromNullable } from '../index.js';
 
 describe("fromNullable", () => {
     it("preserves present values and skips the fallback", async () => {
-        const link = Object.freeze({ health: 100 });
+        const item = Object.freeze({ kind: "potion", charges: 3 });
         const run = fromNullable(() => {
             assert.fail("fallback should not run");
         });
-        const result = await run(link)();
+        const result = await run(item)();
 
         assert.strictEqual(result.type, "ok");
-        assert.strictEqual(result.value, link);
+        assert.strictEqual(result.value, item);
         assert.deepStrictEqual(await run(0)(), Result.ok(0));
         assert.deepStrictEqual(await run(false)(), Result.ok(false));
         assert.deepStrictEqual(await run("")(), Result.ok(""));
@@ -21,7 +21,7 @@ describe("fromNullable", () => {
     });
 
     it("passes null and undefined to the fallback once each", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Item unavailable" };
         const calls = [];
         const run = fromNullable((...args) => {
             calls.push(args);
@@ -45,7 +45,7 @@ describe("fromNullable", () => {
     });
 
     it("propagates fallback throws", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Item unavailable" };
         const run = fromNullable(() => {
             throw error;
         });

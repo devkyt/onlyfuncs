@@ -5,14 +5,14 @@ import { ok, err, tapError } from '../index.js';
 
 describe("tapError", () => {
     it("calls the effect once and preserves the original wrapper", () => {
-        const link = Object.freeze({ health: 100 });
-        const input = Object.freeze(err(link));
+        const failure = Object.freeze({ action: "castSpell", reason: "Cooldown" });
+        const input = Object.freeze(err(failure));
         let calls = 0;
         const run = tapError((...args) => {
             calls += 1;
 
             assert.strictEqual(args.length, 1);
-            assert.strictEqual(args[0], link);
+            assert.strictEqual(args[0], failure);
 
             return "ignored";
         });
@@ -45,18 +45,18 @@ describe("tapError", () => {
     });
 
     it("does not wait for a returned Promise", () => {
-        const input = err("Link");
+        const input = err("Spell on cooldown");
         const run = tapError(() => new Promise(() => {}));
 
         assert.strictEqual(run(input), input);
     });
 
     it("propagates effect throws", () => {
-        const error = { reason: "No stamina" };
+        const error = { reason: "Not enough mana" };
         const run = tapError(() => {
             throw error;
         });
 
-        assert.throws(() => run(err("Link")), actual => actual === error);
+        assert.throws(() => run(err("Spell on cooldown")), actual => actual === error);
     });
 });

@@ -5,14 +5,14 @@ import { some, none, toArray } from '../index.js';
 
 describe("toArray", () => {
     it("puts the Some payload in a fresh array", () => {
-        const link = Object.freeze({ health: 100 });
-        const input = Object.freeze(some(link));
+        const spell = Object.freeze({ name: "Cure", cost: 8 });
+        const input = Object.freeze(some(spell));
         const first = toArray(input);
         const second = toArray(input);
 
-        assert.deepStrictEqual(first, [link]);
-        assert.deepStrictEqual(second, [link]);
-        assert.strictEqual(first[0], link);
+        assert.deepStrictEqual(first, [spell]);
+        assert.deepStrictEqual(second, [spell]);
+        assert.strictEqual(first[0], spell);
         assert.notStrictEqual(first, second);
     });
 
@@ -22,7 +22,7 @@ describe("toArray", () => {
 
         assert.deepStrictEqual(first, []);
 
-        first.push("Link");
+        first.push("Fireball");
 
         assert.deepStrictEqual(second, []);
         assert.notStrictEqual(first, second);

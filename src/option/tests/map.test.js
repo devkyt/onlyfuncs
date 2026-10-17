@@ -5,11 +5,13 @@ import { some, none, map } from '../index.js';
 
 describe("map", () => {
     it("transforms a present value without changing the input", () => {
-        const input = some(100);
-        const result = map(health => health - 10)(input);
+        const weapon = Object.freeze({ kind: "sword", damage: 12 });
+        const input = Object.freeze(some(weapon));
+        const enchant = map(item => ({ ...item, damage: item.damage + 5 }));
+        const result = enchant(input);
 
-        assert.deepStrictEqual(result, some(90));
-        assert.deepStrictEqual(input, some(100));
+        assert.deepStrictEqual(result, { type: "some", value: { kind: "sword", damage: 17 } });
+        assert.strictEqual(input.value, weapon);
         assert.notStrictEqual(result, input);
     });
 
@@ -28,7 +30,7 @@ describe("map", () => {
         const healthOf = map((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [link]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], link);
 
             return args[0].health;
@@ -59,5 +61,13 @@ describe("map", () => {
         });
 
         assert.throws(() => run(some("Link")), actual => actual === error);
+    });
+
+    it("wraps a returned Option without flattening it", () => {
+        const selected = some({ kind: "potion", healing: 25 });
+        const result = map(() => selected)(some("potion"));
+
+        assert.deepStrictEqual(result, { type: "some", value: selected });
+        assert.strictEqual(result.value, selected);
     });
 });

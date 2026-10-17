@@ -5,10 +5,11 @@ import { contramap } from '../index.js';
 
 describe("contramap", () => {
     it("adapts a predicate to a selected value", () => {
-        const isAlive = contramap(hero => hero.health)(health => health > 0);
+        const canCast = contramap(spell => spell.cost)(cost => cost <= 20);
 
-        assert.strictEqual(isAlive({ health: 100 }), true);
-        assert.strictEqual(isAlive({ health: 0 }), false);
+        assert.strictEqual(canCast({ name: "Cure", cost: 10 }), true);
+        assert.strictEqual(canCast({ name: "Blizzard", cost: 20 }), true);
+        assert.strictEqual(canCast({ name: "Meteor", cost: 30 }), false);
     });
 
     it("waits for input and calls selector then predicate once per use", () => {

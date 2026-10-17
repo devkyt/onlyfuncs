@@ -5,10 +5,10 @@ import { some, none, flatten } from '../index.js';
 
 describe("flatten", () => {
     it("returns the inner Some unchanged", () => {
-        const link = some({ health: 100 });
-        const input = Object.freeze(some(link));
+        const item = some({ kind: "shield", armor: 8 });
+        const input = Object.freeze(some(item));
 
-        assert.strictEqual(flatten(input), link);
+        assert.strictEqual(flatten(input), item);
     });
 
     it("returns none for an inner or outer None", () => {

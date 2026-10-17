@@ -5,11 +5,14 @@ import { some, none, flatMap } from '../index.js';
 
 describe("flatMap", () => {
     it("returns the callback's Option without nesting it", () => {
-        const input = some("Link");
-        const zelda = some("Zelda");
+        const potion = Object.freeze({ kind: "potion", healing: 25 });
+        const inventory = Object.freeze([potion]);
+        const input = Object.freeze(some(inventory));
+        const selected = some(potion);
+        const chooseItem = items => items.includes(potion) ? selected : none;
 
-        assert.strictEqual(flatMap(() => zelda)(input), zelda);
-        assert.deepStrictEqual(input, some("Link"));
+        assert.strictEqual(flatMap(chooseItem)(input), selected);
+        assert.strictEqual(input.value, inventory);
     });
 
     it("allows a present value to become none", () => {
@@ -31,7 +34,7 @@ describe("flatMap", () => {
         const staminaOf = flatMap((...args) => {
             calls += 1;
 
-            assert.deepStrictEqual(args, [link]);
+            assert.strictEqual(args.length, 1);
             assert.strictEqual(args[0], link);
 
             return some(args[0].stamina);

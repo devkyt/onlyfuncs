@@ -26,21 +26,21 @@ describe("some", () => {
     });
 
     it("preserves object and array references", () => {
-        const user = { name: "Link" };
-        const items = [1, 2, 3];
+        const weapon = { kind: "bow", damage: 12 };
+        const items = ["arrow", "potion", "shield"];
 
-        assert.strictEqual(some(user).value, user);
+        assert.strictEqual(some(weapon).value, weapon);
         assert.strictEqual(some(items).value, items);
     });
 
     it("creates a fresh wrapper for each call", () => {
-        const user = { name: "Link" };
-        const first = some(user);
-        const second = some(user);
+        const weapon = { kind: "bow", damage: 12 };
+        const first = some(weapon);
+        const second = some(weapon);
 
         assert.notStrictEqual(first, second);
-        assert.strictEqual(first.value, user);
-        assert.strictEqual(second.value, user);
+        assert.strictEqual(first.value, weapon);
+        assert.strictEqual(second.value, weapon);
     });
 
     it("distinguishes a present undefined value from absence", () => {

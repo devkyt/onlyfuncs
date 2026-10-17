@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as Semigroup from '../../semigroup/index.js';
 import { sum } from '../index.js';
 
 describe("sum", () => {
@@ -15,7 +14,11 @@ describe("sum", () => {
         assert.strictEqual(sum.combine(10, sum.empty()), 10);
     });
 
-    it("reuses the Semigroup combining function", () => {
-        assert.strictEqual(sum.combine, Semigroup.sum.combine);
+    it("combines three values associatively", () => {
+        const [first, second, third] = [7, -3, 2];
+        const left = sum.combine(sum.combine(first, second), third);
+        const right = sum.combine(first, sum.combine(second, third));
+
+        assert.deepStrictEqual(left, right);
     });
 });

@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { setImmediate } from 'node:timers/promises';
 
 import { defer } from '../index.js';
 
@@ -21,12 +22,12 @@ describe("defer", () => {
     });
 
     it("resolves plain values without changing their identity", async () => {
-        const link = { health: 100 };
-        const task = defer(() => link);
+        const spell = { name: "Fireball", cost: 20 };
+        const task = defer(() => spell);
         const pending = task();
 
         assert.ok(pending instanceof Promise);
-        assert.strictEqual(await pending, link);
+        assert.strictEqual(await pending, spell);
         assert.strictEqual(await defer(() => 0)(), 0);
         assert.strictEqual(await defer(() => false)(), false);
         assert.strictEqual(await defer(() => null)(), null);
@@ -34,10 +35,7 @@ describe("defer", () => {
     });
 
     it("waits for and adopts a returned Promise", async () => {
-        let finish;
-        const source = new Promise(resolve => {
-            finish = resolve;
-        });
+        const { promise: source, resolve: finish } = Promise.withResolvers();
         const task = defer(() => source);
         const pending = task();
         let settled = false;
@@ -45,16 +43,16 @@ describe("defer", () => {
             settled = true;
         });
 
-        await new Promise(resolve => setImmediate(resolve));
+        await setImmediate();
 
         assert.strictEqual(settled, false);
-        finish("Link");
+        finish("Fireball");
 
-        assert.strictEqual(await pending, "Link");
+        assert.strictEqual(await pending, "Fireball");
     });
 
     it("turns synchronous throws into rejections", async () => {
-        const error = { reason: "No stamina" };
+        const error = { reason: "Not enough mana" };
         const task = defer(() => {
             throw error;
         });
@@ -63,7 +61,7 @@ describe("defer", () => {
     });
 
     it("preserves Promise rejections and falsy thrown values", async () => {
-        const error = { reason: "Missing hero" };
+        const error = { reason: "Spell unavailable" };
         const rejected = defer(() => Promise.reject(error));
         const thrown = defer(() => {
             throw undefined;
@@ -74,12 +72,12 @@ describe("defer", () => {
     });
 
     it("adopts thenables but does not invoke returned functions", async () => {
-        const thenable = { then: resolve => resolve("Link") };
+        const thenable = { then: resolve => resolve("Fireball") };
         const callback = () => {
             assert.fail("returned function should not run");
         };
 
-        assert.strictEqual(await defer(() => thenable)(), "Link");
+        assert.strictEqual(await defer(() => thenable)(), "Fireball");
         assert.strictEqual(await defer(() => callback)(), callback);
     });
 });

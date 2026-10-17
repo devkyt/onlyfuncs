@@ -5,9 +5,11 @@ import { compose } from '../index.js';
 
 describe("compose", () => {
     it("runs steps from right to left", () => {
-        const calculate = compose(value => value * 2, value => value + 3);
+        const enchant = weapon => ({ ...weapon, damage: weapon.damage + 3 });
+        const criticalHit = weapon => weapon.damage * 2;
+        const attack = compose(criticalHit, enchant);
 
-        assert.strictEqual(calculate(2), 10);
+        assert.strictEqual(attack(Object.freeze({ damage: 7 })), 20);
     });
 
     it("reuses the same composition with different inputs", () => {
@@ -71,13 +73,26 @@ describe("compose", () => {
         assert.strictEqual(firstStepRan, true);
     });
 
-    it("preserves the caller's array of functions", () => {
-        const double = value => value * 2;
-        const addThree = value => value + 3;
-        const steps = [double, addThree];
-        const run = compose(...steps);
+    it("passes only the previous result to each step", () => {
+        const potion = Object.freeze({ kind: "potion", healing: 25 });
+        const inventory = Object.freeze([potion]);
+        const calls = [];
+        const chooseItem = (...args) => {
+            calls.push("chooseItem");
+            assert.strictEqual(args.length, 1);
+            assert.strictEqual(args[0], inventory);
 
-        run(2);
-        assert.deepStrictEqual(steps, [double, addThree]);
+            return potion;
+        };
+        const heal = (...args) => {
+            calls.push("heal");
+            assert.strictEqual(args.length, 1);
+            assert.strictEqual(args[0], potion);
+
+            return args[0].healing;
+        };
+
+        assert.strictEqual(compose(heal, chooseItem)(inventory), 25);
+        assert.deepStrictEqual(calls, ["chooseItem", "heal"]);
     });
 });
