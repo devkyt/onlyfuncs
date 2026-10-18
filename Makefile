@@ -41,7 +41,6 @@ release:
 	@case "$(VERSION)" in v*) ;; *) echo "VERSION must start with v"; exit 1;; esac
 	@test -z "$$(git status --porcelain)" || { echo "Working tree must be clean"; exit 1; }
 	@test -n "$$(git branch --show-current)" || { echo "You must be on a branch"; exit 1; }
-	npm ci
 	npm run build --if-present
 	npm test
 	npm pack --dry-run

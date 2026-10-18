@@ -38,9 +38,6 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build
         run: npm run build --if-present
 
