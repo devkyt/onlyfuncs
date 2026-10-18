@@ -3,6 +3,7 @@
 Lightweight and hopefully ready to use library for functional programming in JavaScript. 
 It was written out of curiosity and because someone got really bored with OOP.
 
+
 ## Description 
 
 Provides a wide set of functions and types that are quite regular for functional programming. For example map, 
@@ -110,6 +111,7 @@ console.log(await item("apple")());
 console.log(await item("moonstone")());
 ```
 
+
 ## Modules
 
 | Module | Import | Purpose |
@@ -124,6 +126,7 @@ console.log(await item("moonstone")());
 | Semigroup | `onlyfuncs/semigroup` | Combine values, such as strings, arrays, and records |
 | Monoid | `onlyfuncs/monoid` | Combine values with an identity |
 | Validation | `onlyfuncs/validation` | Accumulate errors from independent checks |
+
 
 ## License
 
