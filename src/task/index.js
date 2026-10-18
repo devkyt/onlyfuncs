@@ -167,7 +167,7 @@ export const tapAsync = (effect) => (task) => async () => {
  *
  * @template A
  * @param {ReadonlyArray<Task<A>>} tasks - Tasks invoked without arguments in array order.
- * @returns {Task<A[]>} The task collecting all values.
+ * @returns {Task<(A | undefined)[]>} The task collecting all values.
  * @example
  * await all([of("Link"), of("Zelda")])(); // ["Link", "Zelda"]
  */
@@ -185,7 +185,8 @@ export const all = (tasks) => async () => {
  *
  * @template A, B
  * @param {(value: A) => Task<B>} transform - Creates a task from each value, without an index.
- * @returns {(values: ReadonlyArray<A>) => Task<B[]>} A function collecting transformed tasks.
+ * @returns {(values: ReadonlyArray<A>) => Task<(B | undefined)[]>}
+ * A function collecting transformed tasks.
  * @example
  * const healAll = traverse(health => of(health + 1))([2, 3]);
  * await healAll(); // [3, 4]

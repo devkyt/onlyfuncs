@@ -87,7 +87,7 @@ export const findFirst = (predicate) => (values) => {
  * returns Some(undefined). Validates the index before receiving the array.
  *
  * @param {number} index - A safe integer; -1 selects the last element.
- * @returns {<A>(values: ReadonlyArray<A>) => import("../option/index.js").Option<A>}
+ * @returns {<A>(values: ReadonlyArray<A>) => import("../option/index.js").Option<A | undefined>}
  * A function reading an array element.
  * @throws {RangeError} If index is not a safe integer.
  * @example
