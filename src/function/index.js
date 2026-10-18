@@ -11,12 +11,12 @@ export const identity = (value) => value;
 
 
 /**
- * Creates a function that always returns the captured value.
- * Each call returns the same value without cloning it.
+ * Creates a function that returns the same captured value on every call.
+ * Object references are preserved.
  *
  * @template A
  * @param {A} value - The value to capture.
- * @returns {function(): A} A function returning the captured value.
+ * @returns {() => A} The constant function.
  * @example
  * const hero = constant("Link");
  * hero(); // "Link"
@@ -25,15 +25,13 @@ export const constant = (value) => () => value;
 
 
 /**
- * Passes a value through functions from left to right, immediately.
- * Each function receives only the previous result. With no functions,
- * returns the original value. Promises are passed along without awaiting.
- * Exceptions propagate and prevent later functions from running.
+ * Immediately passes a value through steps from left to right.
+ * Each step receives only the previous result. With no steps, returns the input.
+ * Promises are passed along without awaiting. A throw stops the remaining steps.
  *
- * @param {*} value - The input passed to the first step.
- * @param {...function(*): *} functions - Steps called left to right,
- * each receiving the previous result.
- * @returns {*} The last result, or the initial value when no functions are given.
+ * @param {any} value - The input passed to the first step.
+ * @param {...((value: any) => any)} functions - Steps to apply in order.
+ * @returns {any} The final value, or the input if no steps are given.
  * @throws {TypeError} When a non-function step is reached.
  * @example
  * pipe(3, n => n + 1, n => n * 2); // 8
@@ -51,16 +49,12 @@ export const pipe = (value, ...functions) => {
 }
 
 /**
- * Creates a reusable function that runs steps from left to right.
- * Steps run only when the returned function is called. Each step receives
- * only the previous result. With no steps, returns its input unchanged.
- * Promises are passed along without awaiting. Exceptions propagate and
- * prevent later steps from running.
+ * Creates a function that passes its input through steps from left to right.
+ * Each step receives only the previous result. With no steps, returns the input.
+ * Promises are passed along without awaiting. A throw stops the remaining steps.
  *
- * @param {...function(*): *} functions - Steps called left to right,
- * each receiving the previous result.
- * @returns {function(*): *} A function passing its input through the steps
- * and returning the last result, or its input when no steps are given.
+ * @param {...((value: any) => any)} functions - Steps to apply in order.
+ * @returns {(value: any) => any} The composed function.
  * @throws {TypeError} When the returned function reaches a non-function step.
  * @example
  * const calculate = flow(n => n + 1, n => n * 2);
@@ -70,16 +64,12 @@ export const flow = (...functions) => (value) => pipe(value, ...functions);
 
 
 /**
- * Creates a reusable function that runs steps from right to left.
- * Steps run only when the returned function is called. Each step receives
- * only the previous result. With no steps, returns its input unchanged.
- * Promises are passed along without awaiting. Exceptions propagate and
- * prevent remaining steps from running.
+ * Creates a function that passes its input through steps from right to left.
+ * Each step receives only the previous result. With no steps, returns the input.
+ * Promises are passed along without awaiting. A throw stops the remaining steps.
  *
- * @param {...function(*): *} functions - Steps called right to left,
- * each receiving the previous result.
- * @returns {function(*): *} A function passing its input through the steps
- * and returning the last result, or its input when no steps are given.
+ * @param {...((value: any) => any)} functions - Steps to apply in reverse order.
+ * @returns {(value: any) => any} The composed function.
  * @throws {TypeError} When the returned function reaches a non-function step.
  * @example
  * const calculate = compose(n => n * 2, n => n + 1);
@@ -90,14 +80,12 @@ export const compose = (...functions) => flow(...functions.reverse());
 
 /**
  * Converts a two-argument function into two successive one-argument calls.
- * Preserves argument order and calls fn only at the second application.
- * Exceptions from fn propagate at that point.
+ * Calls fn after receiving the second argument, preserving argument order.
+ * Exceptions from fn propagate.
  *
  * @template A, B, R
- * @param {function(A, B): R} fn - Called with both arguments after the
- * second application.
- * @returns {function(A): function(B): R} A function accepting the first
- * argument, then the second, and returning fn's result.
+ * @param {(first: A, second: B) => R} fn - The two-argument function.
+ * @returns {(first: A) => (second: B) => R} The curried function.
  * @example
  * const subtract = curry2((a, b) => a - b);
  * subtract(10)(3); // 7
@@ -107,15 +95,12 @@ export const curry2 = (fn) => (x) => (y) => fn(x, y);
 
 /**
  * Converts a three-argument function into three successive one-argument calls.
- * Preserves argument order and calls fn only at the third application.
- * Exceptions from fn propagate at that point.
+ * Calls fn after receiving the third argument, preserving argument order.
+ * Exceptions from fn propagate.
  *
  * @template A, B, C, R
- * @param {function(A, B, C): R} fn - Called with all three arguments after
- * the third application.
- * @returns {function(A): function(B): function(C): R} A function accepting
- * the first, second, and third arguments in successive calls, then returning
- * fn's result.
+ * @param {(first: A, second: B, third: C) => R} fn - The three-argument function.
+ * @returns {(first: A) => (second: B) => (third: C) => R} The curried function.
  * @example
  * const cast = curry3((caster, spell, target) => `${caster}: ${spell} on ${target}`);
  * cast("Rauru")("Blizzard")("Goblin"); // "Rauru: Blizzard on Goblin"

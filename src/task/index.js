@@ -4,17 +4,17 @@
  * results automatically. A captured promise may already be running or settled.
  *
  * @template A
- * @typedef {function(): Promise<A>} Task
+ * @typedef {() => Promise<A>} Task
  */
 
 /**
- * Creates a task resolving to a captured value, preserving object references.
- * Functions are kept as data. Promises and thenables are adopted on execution;
- * an already-created promise is not restarted or made lazy by this wrapper.
+ * Creates a task for a captured value, preserving object references.
+ * Functions remain data. Promises and thenables are adopted when the task runs;
+ * an already-created promise is not restarted or made lazy.
  *
  * @template A
- * @param {(A|PromiseLike<A>)} value - The value or promise-like result to capture.
- * @returns {Task<A>} A task resolving to the captured value or adopting its rejection.
+ * @param {A | PromiseLike<A>} value - The value or promise-like result to capture.
+ * @returns {Task<A>} The task for the captured value.
  * @example
  * const hero = of("Link");
  * await hero(); // "Link"
@@ -27,8 +27,8 @@ export const of = (value) => () => Promise.resolve(value);
  * Adopts returned promises and thenables. Synchronous throws become rejections.
  *
  * @template A
- * @param {function(): (A|PromiseLike<A>)} func - Called without arguments on each execution.
- * @returns {Task<A>} A task resolving to the function's result or rejecting with its failure.
+ * @param {() => A | PromiseLike<A>} func - Called without arguments on each execution.
+ * @returns {Task<A>} The deferred task.
  * @example
  * let calls = 0;
  * const count = defer(() => ++calls);
@@ -44,7 +44,7 @@ export const defer = (func) => async() =>
  * Validates the delay immediately, before any task is run.
  *
  * @param {number} ms - An integer delay in milliseconds, from 0 through 2147483647.
- * @returns {Task<undefined>} A task resolving to undefined after its timer fires.
+ * @returns {Task<undefined>} A task resolving to undefined after the delay.
  * @throws {RangeError} If ms is not an integer in the supported range.
  * @example
  * await sleep(0)(); // undefined
@@ -60,16 +60,16 @@ export const sleep = (ms) => {
 
 
 /**
- * Transforms a task's resolved value and waits for a promise returned by the callback.
- * Each execution calls the source task, then transforms its resolved value.
- * If the source rejects, the transform is skipped. A callback throw rejects the
- * returned promise; a source throw before returning a promise throws directly.
+ * Transforms a task's resolved value, awaiting a returned promise or thenable.
+ * Repeats the source and transform on each execution; a rejection skips transform.
+ * A callback throw rejects the promise; a source throw before returning a promise
+ * throws directly.
  *
  * @template A, B
- * @param {function(A): (B|PromiseLike<B>)} transform - Called once with the fulfilled value.
- * @returns {function(Task<A>): Task<B>} A function building a task for the transformed result.
+ * @param {(value: A) => B | PromiseLike<B>} transform - Called once with the fulfilled value.
+ * @returns {(task: Task<A>) => Task<B>} A function mapping a task.
  * @example
- * const heal = map(health => health + 1)(of(3));
+ * const heal = map(async health => health + 1)(of(3));
  * await heal(); // 4
  */
 export const map = (transform) => (task) => () =>
@@ -77,16 +77,15 @@ export const map = (transform) => (task) => () =>
 
 
 /**
- * Chains a task's fulfilled value into another task and executes that task.
- * Each execution calls the source task, the callback, then the next task. The
- * callback may return the next task directly or a promise of that task. Source
- * rejection skips the callback. Callback and next-task failures reject the promise;
- * a source throw before returning a promise throws directly.
+ * Chains a resolved value into another task and runs it.
+ * The callback may return the next task or a promise of it. Repeats the chain on
+ * each execution; a source rejection skips the callback. Callback and next-task
+ * failures reject the promise; a source throw before returning a promise throws directly.
  *
  * @template A, B
- * @param {function(A): (Task<B>|PromiseLike<Task<B>>)} transform - Receives the fulfilled
- * value and supplies the next task, which is called without arguments.
- * @returns {function(Task<A>): Task<B>} A function building the sequential task chain.
+ * @param {(value: A) => Task<B> | PromiseLike<Task<B>>} transform -
+ * Supplies the next task for the resolved value.
+ * @returns {(task: Task<A>) => Task<B>} A function chaining tasks.
  * @example
  * const heal = flatMap(health => of(health + 1))(of(3));
  * await heal(); // 4
@@ -97,13 +96,13 @@ export const flatMap = (transform) => (task) => () =>
 
 /**
  * Removes one nested Task layer by running the outer task, then the resolved task.
- * Each execution calls both task functions in sequence. Rejections propagate.
+ * Runs the inner task only if the outer task fulfills. Rejections propagate.
  * An outer-task throw before returning a promise throws directly; an inner-task
  * throw rejects the returned promise.
  *
  * @template A
  * @param {Task<Task<A>>} task - A task resolving to another task.
- * @returns {Task<A>} A task resolving to the inner task's result.
+ * @returns {Task<A>} The task for the inner result.
  * @example
  * await flatten(of(of("Link")))(); // "Link"
  */
@@ -112,15 +111,14 @@ export const flatten = (task) => () =>
 
 
 /**
- * Runs an effect after source fulfillment and preserves the fulfilled value.
- * Repeats the source and effect on each execution; skips the effect on rejection.
- * Ignores the effect's return value without awaiting it. An effect throw rejects
- * the returned promise; a source throw before returning a promise throws directly.
- * Use tapAsync to wait for an asynchronous effect and propagate its rejection.
+ * Runs an effect after fulfillment and preserves the value; skips the effect on rejection.
+ * Repeats on each execution. Ignores the effect's return value without awaiting it;
+ * use tapAsync for async effects. An effect throw rejects the promise; a source throw
+ * before returning a promise throws directly.
  *
  * @template A
- * @param {function(A): *} effect - Called once with the resolved value; its return value is ignored.
- * @returns {function(Task<A>): Task<A>} A function building a task that observes its result.
+ * @param {(value: A) => unknown} effect - Observes the resolved value.
+ * @returns {(task: Task<A>) => Task<A>} A function adding a synchronous effect.
  * @example
  * const seen = [];
  * const hero = tap(name => { seen.push(name); })(of("Link"));
@@ -135,14 +133,12 @@ export const tap = (effect) => (task) => () =>
 
 
 /**
- * Awaits an effect after source fulfillment and preserves the fulfilled value.
- * Repeats the source and effect on each execution; skips the effect on failure.
- * Synchronous throws and promise rejections from either stage reject the task.
+ * Awaits an effect after fulfillment and preserves the value; skips it on failure.
+ * Repeats on each execution. Source or effect throws and rejections reject the task.
  *
  * @template A
- * @param {function(A): *} effect - Receives the fulfilled value. Its result is awaited
- * if promise-like and otherwise ignored.
- * @returns {function(Task<A>): Task<A>} A function building a task that waits for the effect.
+ * @param {(value: A) => unknown} effect - Observes the resolved value; may return a promise.
+ * @returns {(task: Task<A>) => Task<A>} A function adding an awaited effect.
  * @example
  * const seen = [];
  * const hero = tapAsync(async name => {
@@ -167,10 +163,11 @@ export const tapAsync = (effect) => (task) => async () => {
  * Empty input resolves to an empty array. Rejections do not cancel started tasks.
  * A synchronous task throw rejects the combined task and prevents later tasks
  * from starting.
+ * Array holes become undefined entries in the output.
  *
  * @template A
  * @param {ReadonlyArray<Task<A>>} tasks - Tasks invoked without arguments in array order.
- * @returns {Task<A[]>} A task resolving to all values or rejecting when one task fails.
+ * @returns {Task<A[]>} The task collecting all values.
  * @example
  * await all([of("Link"), of("Zelda")])(); // ["Link", "Zelda"]
  */
@@ -181,17 +178,14 @@ export const all = (tasks) => async () => {
 
 
 /**
- * Builds and starts a task for each value, collecting results in input order.
- * Runs tasks concurrently; repeats transforms and tasks on every execution.
- * Empty input resolves to an empty array. Rejections do not cancel started work.
- * A synchronous transform or task throw rejects the combined task and skips
- * remaining inputs.
+ * Creates and runs tasks concurrently, collecting values in input order.
+ * Repeats transforms and tasks on each execution. Empty input resolves to [].
+ * Rejections do not cancel running tasks. A synchronous transform or task throw rejects
+ * the combined task and skips later inputs. Array holes skip transform and produce undefined.
  *
  * @template A, B
- * @param {function(A): Task<B>} transform - Called with each value, without an index.
- * Its returned task is immediately invoked without arguments during execution.
- * @returns {function(ReadonlyArray<A>): Task<B[]>} A function building a task that
- * collects results in a new array.
+ * @param {(value: A) => Task<B>} transform - Creates a task from each value, without an index.
+ * @returns {(values: ReadonlyArray<A>) => Task<B[]>} A function collecting transformed tasks.
  * @example
  * const healAll = traverse(health => of(health + 1))([2, 3]);
  * await healAll(); // [3, 4]
@@ -213,10 +207,8 @@ export const traverse = (transform) => (values) => async () => {
  * failure. If both fail, rejects with an AggregateError whose errors array holds
  * [sourceError, cleanupError].
  *
- * @param {function(): *} cleanup - Called once without arguments after the source
- * resolves, rejects, or throws. Its result is awaited if promise-like and then discarded.
- * @returns {<A>(task: Task<A>) => Task<A>} A function building a task that settles
- * only after cleanup finishes.
+ * @param {() => unknown} cleanup - Cleanup to run and await without arguments.
+ * @returns {<A>(task: Task<A>) => Task<A>} A function attaching cleanup.
  * @example
  * const events = [];
  * const loadHero = defer(() => { events.push("loaded"); return "Link"; });

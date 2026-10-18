@@ -10,13 +10,12 @@ import {none, some} from "../option/index.js";
  */
 
 /**
- * Negates a predicate's result. The predicate runs when the returned function is
- * called, even with undefined.
+ * Negates a predicate's result. Calls it with the input, including undefined.
  * Callback exceptions propagate.
  *
  * @template A
  * @param {Predicate<A>} predicate - Called once with the original input value.
- * @returns {Predicate<A>} A predicate returning the logical opposite of the result.
+ * @returns {Predicate<A>} The negated predicate.
  * @example
  * const defeated = not(health => health > 0);
  * defeated(0); // true
@@ -31,7 +30,7 @@ export const not = (predicate) => (value) => !predicate(value);
  *
  * @template A
  * @param {...Predicate<A>} predicates - Synchronous checks receiving the same input value.
- * @returns {Predicate<A>} A predicate that passes only when every check passes.
+ * @returns {Predicate<A>} The combined predicate.
  * @example
  * const canAttack = and(hero => hero.health > 0, hero => hero.stamina > 0);
  * canAttack({ health: 3, stamina: 0 }); // false
@@ -47,7 +46,7 @@ export const and = (...predicates) => (value) =>
  *
  * @template A
  * @param {...Predicate<A>} predicates - Synchronous checks receiving the same input value.
- * @returns {Predicate<A>} A predicate that passes when any check passes.
+ * @returns {Predicate<A>} The combined predicate.
  * @example
  * const canHeal = or(hero => hero.potions > 0, hero => hero.knowsCure);
  * canHeal({ potions: 0, knowsCure: true }); // true
@@ -57,14 +56,14 @@ export const or = (...predicates) => (value) =>
 
 
 /**
- * Adapts a predicate by selecting the value it will check.
- * Each call first runs the selector, then passes its result to the supplied
- * predicate. Callback exceptions propagate.
+ * Adapts a predicate to check a selected value.
+ * Each call runs selector, then passes its result to the predicate.
+ * Callback exceptions propagate.
  *
  * @template A, B
- * @param {function(A): B} selector - Converts the original input into the predicate's input.
- * @returns {function(Predicate<B>): Predicate<A>} A function accepting a predicate
- * for the selected value and returning a predicate for the original input.
+ * @param {(value: A) => B} selector - Converts the original input into the predicate's input.
+ * @returns {(predicate: Predicate<B>) => Predicate<A>}
+ * A function adapting a predicate to the original input.
  * @example
  * const canCast = contramap(spell => spell.cost)(cost => cost <= 20);
  * canCast({ name: "Blizzard", cost: 10 }); // true

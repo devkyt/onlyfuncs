@@ -20,7 +20,7 @@ import * as Result from "../result/index.js";
  * A value that is either present or absent.
  *
  * @template A
- * @typedef {(Some<A>|None)} Option
+ * @typedef {Some<A> | None} Option
  */
 
 /**
@@ -28,8 +28,8 @@ import * as Result from "../result/index.js";
  * Unlike fromNullable, null and undefined are treated as present values.
  *
  * @template A
- * @param {A} value - The value to wrap without inspecting or cloning it.
- * @returns {Some<A>} A new Some wrapper containing the value.
+ * @param {A} value - The value to wrap.
+ * @returns {Some<A>} A new Some.
  * @example
  * some("Link"); // { type: "some", value: "Link" }
  */
@@ -75,8 +75,8 @@ export const isNone = (option) => option.type === "none";
  * Values such as 0, false, and an empty string remain present.
  *
  * @template A
- * @param {(A|null|undefined)} value - The possibly missing value.
- * @returns {Option<A>} Some for a non-nullish value, otherwise the shared None.
+ * @param {A} value - The possibly missing value.
+ * @returns {Option<NonNullable<A>>} Some for a present value, otherwise None.
  * @example
  * fromNullable(0); // { type: "some", value: 0 }
  * fromNullable(null); // { type: "none" }
@@ -86,13 +86,12 @@ export const fromNullable = (value) =>
 
 
 /**
- * Wraps a value in Some when the predicate passes, otherwise returns None.
- * The predicate runs when the returned function is called, even with undefined.
- * Callback exceptions propagate.
+ * Returns Some when the predicate passes, otherwise None.
+ * Calls the predicate with the input, including undefined. Exceptions propagate.
  *
  * @template A
- * @param {function(A): boolean} predicate - Called once with the supplied value.
- * @returns {function(A): Option<A>} A function checking and wrapping its input.
+ * @param {(value: A) => boolean} predicate - Called once with the supplied value.
+ * @returns {(value: A) => Option<A>} A function testing and wrapping a value.
  * @example
  * fromPredicate(health => health > 0)(3); // { type: "some", value: 3 }
  * fromPredicate(value => value === undefined)(undefined); // { type: "some", value: undefined }
@@ -102,12 +101,12 @@ export const fromPredicate = (predicate) => (value) =>
 
 
 /**
- * Converts Ok to Some and Err to None, discarding the error payload.
- * Successful null and undefined payloads remain present.
+ * Converts Ok to Some and Err to None, discarding the error.
+ * Successful null and undefined values remain present.
  *
  * @template A, E
  * @param {import("../result/index.js").Result<A, E>} result - The Result to convert.
- * @returns {Option<A>} Some containing the Ok payload, or the shared None for Err.
+ * @returns {Option<A>} The converted Option.
  * @example
  * fromResult(Result.ok("Link")); // { type: "some", value: "Link" }
  */
@@ -116,27 +115,28 @@ export const fromResult = (result) =>
 
 
 /**
- * Transforms a Some payload once; skips the callback for None.
- * The callback's output is wrapped without flattening or awaiting it.
- * Callback exceptions propagate.
+ * Transforms a Some value; skips None. Wraps the output without flattening
+ * or awaiting it. Callback exceptions propagate.
  *
  * @template A, B
- * @param {function(A): B} transform - Receives the entire Some payload.
- * @returns {function(Option<A>): Option<B>} A function mapping Some or returning None.
+ * @param {(value: A) => B} transform - Receives the entire Some payload.
+ * @returns {(option: Option<A>) => Option<B>} A function mapping Some values.
  * @example
- * map(health => health + 1)(some(3)); // { type: "some", value: 4 }
+ * map(name => name.toUpperCase())(some("Link")); // { type: "some", value: "LINK" }
+ * map(name => some(name.toUpperCase()))(some("Link"));
+ * // { type: "some", value: { type: "some", value: "LINK" } }
  */
 export const map = (transform) => (option) =>
     isSome(option) ? some(transform(option.value)) : none;
 
 
 /**
- * Chains a Some payload into another Option; skips the callback for None.
+ * Chains a Some value into another Option; skips None.
  * Returns the callback's Option directly. Callback exceptions propagate.
  *
  * @template A, B
- * @param {function(A): Option<B>} transform - Receives the payload and returns an Option.
- * @returns {function(Option<A>): Option<B>} A function chaining Some or returning None.
+ * @param {(value: A) => Option<B>} transform - Receives the payload and returns an Option.
+ * @returns {(option: Option<A>) => Option<B>} A function chaining Options.
  * @example
  * const petName = flatMap(hero => fromNullable(hero.pet));
  * petName(some({ pet: "Epona" })); // { type: "some", value: "Epona" }
@@ -164,8 +164,8 @@ export const flatten = (option) =>
  * Returns None on failure and skips the predicate for None. Exceptions propagate.
  *
  * @template A
- * @param {function(A): boolean} predicate - Called once with a Some payload.
- * @returns {function(Option<A>): Option<A>} A function keeping or discarding the value.
+ * @param {(value: A) => boolean} predicate - Called once with a Some payload.
+ * @returns {(option: Option<A>) => Option<A>} A function filtering Some values.
  * @example
  * filter(health => health > 0)(some(0)); // { type: "none" }
  */
@@ -178,9 +178,8 @@ export const filter = (predicate) => (option) =>
  * Callback exceptions propagate.
  *
  * @template B
- * @param {function(): Option<B>} fallback - Called without arguments to supply an Option.
- * @returns {<A>(option: Option<A>) => Option<A | B>} A function that returns the original
- * Some or the fallback Option.
+ * @param {() => Option<B>} fallback - Called without arguments to supply an Option.
+ * @returns {<A>(option: Option<A>) => Option<A | B>} A function supplying a fallback Option.
  * @example
  * orElse(() => some("Link"))(none); // { type: "some", value: "Link" }
  */
@@ -194,8 +193,8 @@ export const orElse = (fallback) => (option) =>
  * awaited, and synchronous exceptions propagate.
  *
  * @template A
- * @param {function(A): *} effect - Called once with the wrapped value; its return value is ignored.
- * @returns {function(Option<A>): Option<A>} A function observing and preserving the Option.
+ * @param {(value: A) => unknown} effect - Observes the Some value.
+ * @returns {(option: Option<A>) => Option<A>} A function observing an Option.
  * @example
  * const seen = [];
  * tap(name => { seen.push(name); })(some("Link"));
@@ -211,13 +210,11 @@ export const tap = (effect) => (option) => {
 
 
 /**
- * Unwraps Some or computes a fallback for None.
- * The fallback runs only for None; callback exceptions propagate.
+ * Unwraps Some or calls fallback for None. Callback exceptions propagate.
  *
  * @template B
- * @param {function(): B} fallback - Called without arguments to supply the fallback value.
- * @returns {<A>(option: Option<A>) => A | B} A function that returns the Some value
- * or the fallback value.
+ * @param {() => B} fallback - Called without arguments to supply the fallback value.
+ * @returns {<A>(option: Option<A>) => A | B} A function unwrapping an Option.
  * @example
  * getOrElse(() => "Link")(none); // "Link"
  */
@@ -226,14 +223,14 @@ export const getOrElse = (fallback) => (option) =>
 
 
 /**
- * Handles an Option using only the matching callback.
- * Returns the selected callback's output directly. Exceptions propagate.
+ * Calls the matching handler and returns its output directly.
+ * Callback exceptions propagate.
  *
  * @template A, B, C
  * @param {Object} handlers - Callbacks for the two possible branches.
- * @param {function(A): B} handlers.onSome - Called with the Some payload.
- * @param {function(): C} handlers.onNone - Called without arguments for None.
- * @returns {function(Option<A>): (B|C)} A function returning the selected handler's output.
+ * @param {(value: A) => B} handlers.onSome - Called with the Some payload.
+ * @param {() => C} handlers.onNone - Called without arguments for None.
+ * @returns {(option: Option<A>) => B | C} A function handling either branch.
  * @example
  * const greet = match({ onSome: name => `Hello, ${name}`, onNone: () => "Nobody here" });
  * greet(some("Link")); // "Hello, Link"
@@ -261,9 +258,8 @@ export const toArray = (option) =>
  * The combiner runs only when both inputs are Some. Exceptions propagate.
  *
  * @template A, B, C
- * @param {function(A, B): C} combine - Receives the left payload, then the right payload.
- * @returns {function(Option<A>, Option<B>): Option<C>} A function accepting both Options
- * in one call and wrapping their combined value.
+ * @param {(left: A, right: B) => C} combine - Combines the two Some values.
+ * @returns {(left: Option<A>, right: Option<B>) => Option<C>} A function combining two Options.
  * @example
  * zipWith((a, b) => a + b)(some(2), some(3)); // { type: "some", value: 5 }
  */
@@ -280,6 +276,7 @@ export const zipWith = (combine) => (left, right) =>
  * @returns {Option<A[]>} Some containing a new array, or the shared None.
  * @example
  * all([some("Link"), some("Zelda")]); // { type: "some", value: ["Link", "Zelda"] }
+ * all([some("Link"), none]); // { type: "none" }
  */
 export const all = (options) => {
     const outputs = []
@@ -302,9 +299,8 @@ export const all = (options) => {
  * Empty input returns Some containing an empty array.
  *
  * @template A, B
- * @param {function(A): Option<B>} transform - Called once per visited value, with no index.
- * @returns {function(Iterable<A>): Option<B[]>} A function returning Some containing
- * a new array of values, or None if any transformation returns None.
+ * @param {(value: A) => Option<B>} transform - Called once per visited value, with no index.
+ * @returns {(values: Iterable<A>) => Option<B[]>} A function collecting transformed values.
  * @example
  * traverse(name => fromNullable(name))(["Link", null]); // { type: "none" }
  */

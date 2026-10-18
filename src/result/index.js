@@ -22,7 +22,7 @@ import * as Option from "../option/index.js";
  * The outcome of an operation that may succeed or fail.
  *
  * @template A, E
- * @typedef {(Ok<A>|Err<E>)} Result
+ * @typedef {Ok<A> | Err<E>} Result
  */
 
 
@@ -31,7 +31,7 @@ import * as Option from "../option/index.js";
  *
  * @template A
  * @param {A} value - The successful payload, including null or undefined.
- * @returns {Ok<A>} A new Ok wrapper containing the value.
+ * @returns {Ok<A>} A new Ok.
  * @example
  * ok("Link"); // { type: "ok", value: "Link" }
  */
@@ -43,7 +43,7 @@ export const ok = (value) => ({ type: "ok", value: value });
  *
  * @template E
  * @param {E} error - Any failure value; an Error instance is not required.
- * @returns {Err<E>} A new Err wrapper containing the error.
+ * @returns {Err<E>} A new Err.
  * @example
  * err("No stamina"); // { type: "err", error: "No stamina" }
  */
@@ -79,9 +79,8 @@ export const isErr = (result) => result.type === "err";
  * The error callback runs only for a missing value. Exceptions propagate.
  *
  * @template E
- * @param {function((null|undefined)): E} onNull - Receives the original null or undefined.
- * @returns {<A>(value: A | null | undefined) => Result<A, E>} A function returning Ok
- * for a present value or Err containing the computed error.
+ * @param {(value: null | undefined) => E} onNull - Receives the original null or undefined.
+ * @returns {<A>(value: A) => Result<NonNullable<A>, E>} A function wrapping a possibly missing value.
  * @example
  * fromNullable(() => "Missing hero")(null); // { type: "err", error: "Missing hero" }
  */
@@ -90,15 +89,14 @@ export const fromNullable = (onNull) => (value) =>
 
 
 /**
- * Wraps a value in Ok when the predicate passes, otherwise builds Err.
- * The check runs when the returned function is called, even with undefined.
- * Callback exceptions propagate.
+ * Returns Ok when the predicate passes, otherwise Err from onFalse.
+ * Tests the input even when it is undefined. Callback exceptions propagate.
  *
  * @template A, E
  * @param {Object} options - The check and its failure handler.
- * @param {function(A): boolean} options.predicate - Called once with the input value.
- * @param {function(A): E} options.onFalse - Receives the same value only when the check fails.
- * @returns {function(A): Result<A, E>} A function checking and wrapping its input.
+ * @param {(value: A) => boolean} options.predicate - Called once with the input value.
+ * @param {(value: A) => E} options.onFalse - Receives the same value only when the check fails.
+ * @returns {(value: A) => Result<A, E>} A function testing and wrapping a value.
  * @example
  * const alive = fromPredicate({ predicate: health => health > 0, onFalse: () => "Defeated" });
  * alive(0); // { type: "err", error: "Defeated" }
@@ -112,9 +110,9 @@ export const fromPredicate = ({ predicate, onFalse }) => (value) =>
  * Some payloads are preserved, including null and undefined. Exceptions propagate.
  *
  * @template E
- * @param {function(): E} onNone - Called without arguments only for None.
+ * @param {() => E} onNone - Called without arguments only for None.
  * @returns {<A>(option: import("../option/index.js").Option<A>) => Result<A, E>}
- * A function converting an Option into a Result.
+ * A function converting an Option.
  * @example
  * fromOption(() => "Missing hero")(Option.none); // { type: "err", error: "Missing hero" }
  */
@@ -128,9 +126,8 @@ export const fromOption = (onNone) => (option) =>
  * use TaskResult.fromThrowable for asynchronous operations.
  *
  * @template A
- * @param {function(): A} func - Called once without arguments, immediately.
- * @returns {Result<A, unknown>} Ok containing the return value, or Err containing
- * the original thrown value.
+ * @param {() => A} func - Called once without arguments, immediately.
+ * @returns {Result<A, unknown>} Ok with the return value, or Err with the thrown value.
  * @example
  * fromThrowable(() => JSON.parse('"Link"')); // { type: "ok", value: "Link" }
  * fromThrowable(() => { throw "No stamina"; }); // { type: "err", error: "No stamina" }
@@ -145,28 +142,28 @@ export const fromThrowable = (func) => {
 
 
 /**
- * Transforms an Ok payload once; preserves Err without calling the transform.
- * Wraps the output without flattening or awaiting it. Exceptions propagate.
+ * Transforms an Ok value; preserves Err. Wraps the output without flattening
+ * or awaiting it. Callback exceptions propagate.
  *
  * @template A, B
- * @param {function(A): B} transform - Receives the entire Ok payload.
- * @returns {<E>(result: Result<A, E>) => Result<B, E>} A function that transforms the Ok
- * value or returns the original Err.
+ * @param {(value: A) => B} transform - Receives the entire Ok payload.
+ * @returns {<E>(result: Result<A, E>) => Result<B, E>} A function mapping Ok values.
  * @example
  * map(health => health + 1)(ok(3)); // { type: "ok", value: 4 }
+ * map(health => ok(health + 1))(ok(3));
+ * // { type: "ok", value: { type: "ok", value: 4 } }
  */
 export const map = (transform) => (result) =>
     isOk(result) ? ok(transform(result.value)) : result;
 
 
 /**
- * Transforms an Err payload once; preserves Ok without calling the transform.
+ * Transforms an Err value; preserves Ok.
  * Callback exceptions propagate instead of becoming Err.
  *
  * @template E, F
- * @param {function(E): F} transform - Receives the original error payload.
- * @returns {<A>(result: Result<A, E>) => Result<A, F>} A function that transforms the Err
- * value or returns the original Ok.
+ * @param {(error: E) => F} transform - Receives the original error payload.
+ * @returns {<A>(result: Result<A, E>) => Result<A, F>} A function mapping Err values.
  * @example
  * mapError(message => `Failed: ${message}`)(err("No stamina"));
  * // { type: "err", error: "Failed: No stamina" }
@@ -176,14 +173,14 @@ export const mapError = (transform) => (result) =>
 
 
 /**
- * Transforms only the matching branch, retaining its Ok or Err tag.
- * Callback outputs are wrapped without flattening. Exceptions propagate.
+ * Transforms the matching branch, keeping its Ok or Err tag.
+ * Wraps the callback's output without flattening or awaiting it. Exceptions propagate.
  *
  * @template A, B, E, F
  * @param {Object} handlers - A transform for each branch.
- * @param {function(A): B} handlers.onOk - Called with the successful payload for Ok.
- * @param {function(E): F} handlers.onErr - Called with the error payload for Err.
- * @returns {function(Result<A, E>): Result<B, F>} A function transforming the selected branch.
+ * @param {(value: A) => B} handlers.onOk - Called with the successful payload for Ok.
+ * @param {(error: E) => F} handlers.onErr - Called with the error payload for Err.
+ * @returns {(result: Result<A, E>) => Result<B, F>} A function mapping either branch.
  * @example
  * mapBoth({ onOk: health => health + 1, onErr: String })(ok(3));
  * // { type: "ok", value: 4 }
@@ -193,13 +190,12 @@ export const mapBoth = ({ onOk, onErr }) => (result) =>
 
 
 /**
- * Chains an Ok payload into another Result; preserves an existing Err.
+ * Chains an Ok value into another Result; preserves an existing Err.
  * Returns the callback's Result directly. Callback exceptions propagate.
  *
  * @template A, B, F
- * @param {function(A): Result<B, F>} transform - Receives the Ok payload and returns a Result.
- * @returns {<E>(result: Result<A, E>) => Result<B, E | F>} A function that returns the
- * callback's Result for Ok or the original Err.
+ * @param {(value: A) => Result<B, F>} transform - Receives the Ok payload and returns a Result.
+ * @returns {<E>(result: Result<A, E>) => Result<B, E | F>} A function chaining Results.
  * @example
  * flatMap(health => health > 0 ? ok(health) : err("Defeated"))(ok(0));
  * // { type: "err", error: "Defeated" }
@@ -215,11 +211,10 @@ export const flatMap = (transform) => (result) =>
  *
  * @template A, B, F
  * @param {Object} options - The Option-producing transform and missing-value handler.
- * @param {function(A): import("../option/index.js").Option<B>} options.transform
+ * @param {(value: A) => import("../option/index.js").Option<B>} options.transform -
  * Receives the Ok payload and returns an Option.
- * @param {function(A): F} options.onNone - Receives the original Ok payload if the Option is None.
- * @returns {<E>(result: Result<A, E>) => Result<B, E | F>} A function that converts the
- * callback's Option into a Result or returns the original Err.
+ * @param {(value: A) => F} options.onNone - Receives the original Ok payload if the Option is None.
+ * @returns {<E>(result: Result<A, E>) => Result<B, E | F>} A function chaining an Option operation.
  * @example
  * const heroName = flatMapOption({
  *     transform: hero => Option.fromNullable(hero.name),
@@ -243,7 +238,7 @@ export const flatMapOption = ({ transform, onNone }) => (result) => {
  *
  * @template A, E, F
  * @param {Result<Result<A, F>, E>} result - A Result whose Ok payload is another Result.
- * @returns {Result<A, E|F>} The inner Result, or the original outer Err.
+ * @returns {Result<A, E | F>} The inner Result, or the original outer Err.
  * @example
  * flatten(ok(ok("Link"))); // { type: "ok", value: "Link" }
  */
@@ -257,10 +252,9 @@ export const flatten = (result) =>
  *
  * @template A, F
  * @param {Object} options - The check and its failure handler.
- * @param {function(A): boolean} options.predicate - Called once with the Ok payload.
- * @param {function(A): F} options.onFalse - Receives that payload only when the check fails.
- * @returns {<E>(result: Result<A, E>) => Result<A, E | F>} A function that keeps a passing
- * Ok or an existing Err, or creates Err when the check fails.
+ * @param {(value: A) => boolean} options.predicate - Called once with the Ok payload.
+ * @param {(value: A) => F} options.onFalse - Receives that payload only when the check fails.
+ * @returns {<E>(result: Result<A, E>) => Result<A, E | F>} A function filtering Ok values.
  * @example
  * const alive = filterOrElse({ predicate: health => health > 0, onFalse: () => "Defeated" });
  * alive(ok(0)); // { type: "err", error: "Defeated" }
@@ -279,9 +273,8 @@ export const filterOrElse = ({ predicate, onFalse }) => (result) => {
  * Callback exceptions propagate.
  *
  * @template B, E, F
- * @param {function(E): Result<B, F>} fallback - Called only for Err, with its error payload.
- * @returns {<A>(result: Result<A, E>) => Result<A | B, F>} A function that returns the
- * original Ok or the fallback Result.
+ * @param {(error: E) => Result<B, F>} fallback - Called only for Err, with its error payload.
+ * @returns {<A>(result: Result<A, E>) => Result<A | B, F>} A function recovering from Err.
  * @example
  * orElse(() => ok("Link"))(err("Missing hero")); // { type: "ok", value: "Link" }
  */
@@ -295,9 +288,8 @@ export const orElse = (fallback) => (result) =>
  * exceptions propagate.
  *
  * @template A
- * @param {function(A): *} effect - Called once with the success value; its return value is ignored.
- * @returns {<E>(result: Result<A, E>) => Result<A, E>} A function that runs the effect
- * for Ok and returns the original Result.
+ * @param {(value: A) => unknown} effect - Observes the Ok value.
+ * @returns {<E>(result: Result<A, E>) => Result<A, E>} A function observing Ok values.
  * @example
  * const seen = [];
  * tap(name => { seen.push(name); })(ok("Link"));
@@ -318,9 +310,8 @@ export const tap = (effect) => (result) => {
  * exceptions propagate.
  *
  * @template E
- * @param {function(E): *} effect - Called once with the error value; its return value is ignored.
- * @returns {<A>(result: Result<A, E>) => Result<A, E>} A function that runs the effect
- * for Err and returns the original Result.
+ * @param {(error: E) => unknown} effect - Observes the Err value.
+ * @returns {<A>(result: Result<A, E>) => Result<A, E>} A function observing Err values.
  * @example
  * const errors = [];
  * tapError(message => { errors.push(message); })(err("No stamina"));
@@ -339,9 +330,8 @@ export const tapError = (effect) => (result) => {
  * Unwraps Ok or computes a fallback from Err. Callback exceptions propagate.
  *
  * @template B, E
- * @param {function(E): B} fallback - Called only for Err, with its error payload.
- * @returns {<A>(result: Result<A, E>) => A | B} A function that returns the Ok value
- * or the fallback value.
+ * @param {(error: E) => B} fallback - Called only for Err, with its error payload.
+ * @returns {<A>(result: Result<A, E>) => A | B} A function unwrapping a Result.
  * @example
  * getOrElse(() => "Link")(err("Missing hero")); // "Link"
  */
@@ -369,14 +359,14 @@ export const getOrThrow = (result) => {
 
 
 /**
- * Handles a Result using only the matching callback.
- * Returns the selected callback's output directly. Exceptions propagate.
+ * Calls the matching handler and returns its output directly.
+ * Callback exceptions propagate.
  *
  * @template A, B, E, C
  * @param {Object} handlers - Callbacks for the two possible branches.
- * @param {function(A): B} handlers.onOk - Called with the successful payload for Ok.
- * @param {function(E): C} handlers.onErr - Called with the error payload for Err.
- * @returns {function(Result<A, E>): (B|C)} A function returning the selected handler's output.
+ * @param {(value: A) => B} handlers.onOk - Called with the successful payload for Ok.
+ * @param {(error: E) => C} handlers.onErr - Called with the error payload for Err.
+ * @returns {(result: Result<A, E>) => B | C} A function handling either branch.
  * @example
  * const greet = match({ onOk: name => `Hello, ${name}`, onErr: message => message });
  * greet(ok("Link")); // "Hello, Link"
@@ -390,11 +380,14 @@ export const match = ({ onOk, onErr }) => (result) =>
  * Calls the combiner only when both inputs are Ok. Exceptions propagate.
  *
  * @template A, B, C
- * @param {function(A, B): C} combine - Receives the left payload, then the right payload.
+ * @param {(left: A, right: B) => C} combine - Combines the two Ok values.
  * @returns {<E, F>(left: Result<A, E>, right: Result<B, F>) => Result<C, E | F>}
- * A function accepting both Results in one call and wrapping their combined value.
+ * A function combining two Results.
  * @example
- * zipWith((a, b) => a + b)(ok(2), ok(3)); // { type: "ok", value: 5 }
+ * const add = zipWith((a, b) => a + b);
+ * add(ok(2), ok(3)); // { type: "ok", value: 5 }
+ * add(err(["Left missing"]), err(["Right missing"]));
+ * // { type: "err", error: ["Left missing"] }
  */
 export const zipWith = (combine) => (left, right) => {
     for (const result of [left, right]) {
@@ -416,6 +409,8 @@ export const zipWith = (combine) => (left, right) => {
  * @returns {Result<A[], E>} Ok containing a new array, or the original first Err.
  * @example
  * all([ok("Link"), ok("Zelda")]); // { type: "ok", value: ["Link", "Zelda"] }
+ * all([err(["Name required"]), err(["Age required"])]);
+ * // { type: "err", error: ["Name required"] }
  */
 export const all = (results) => {
     const outputs = [];
@@ -438,9 +433,8 @@ export const all = (results) => {
  * Empty input returns Ok containing an empty array.
  *
  * @template A, B, E
- * @param {function(A): Result<B, E>} transform - Called once per visited value, with no index.
- * @returns {function(Iterable<A>): Result<B[], E>} A function returning Ok
- * containing a new array of values, or the first Err.
+ * @param {(value: A) => Result<B, E>} transform - Called once per visited value, with no index.
+ * @returns {(values: Iterable<A>) => Result<B[], E>} A function collecting transformed values.
  * @example
  * traverse(health => ok(health + 1))([2, 3]); // { type: "ok", value: [3, 4] }
  */

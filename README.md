@@ -11,8 +11,10 @@ It was written out of curiosity and because someone got really bored with OOP.
 ## Description 
 
 Provides a wide set of functions and types that are quite regular for functional programming. For example map, 
-pipe, compose, result, option, traverse etc. So you don't have to write them yourself if you decided to give a FP
-a shot, but you are too lazy or busy to implement everything from scratch.
+pipe, compose, result, option, traverse etc. So if you want to give FP a shot, save yourself some time and try 
+the lib. It doesn't byte. Mostly.
+
+Also, it does its best to be readable and supports asynchronous operations.
 
 
 ## Installation 
