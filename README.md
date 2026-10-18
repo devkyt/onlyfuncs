@@ -12,7 +12,7 @@ It was written out of curiosity and because someone got really bored with OOP.
 
 Provides a wide set of functions and types that are quite regular for functional programming. For example map, 
 pipe, compose, result, option, traverse etc. So if you want to give FP a shot, save yourself some time and try 
-the lib. It doesn't byte. Mostly.
+the lib. It doesn't bite. Mostly.
 
 Also, it does its best to be readable and supports asynchronous operations.
 
