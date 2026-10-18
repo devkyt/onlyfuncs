@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo-transparent.png" alt="OnlyFuncs banner" width="700">
+</p>
+
 # OnlyFuncs
 
 Lightweight and hopefully ready to use library for functional programming in JavaScript. 
