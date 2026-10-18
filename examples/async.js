@@ -2,7 +2,7 @@ import { pipe } from "../src/function/index.js";
 import * as TaskResult from "../src/task-result/index.js";
 
 
-const requestItem = async (name) => {
+const lookupItem = async (name) => {
     const response = await fetch(
         `https://dummyjson.com/products/search?q=${encodeURIComponent(name)}`,
     );
@@ -11,17 +11,17 @@ const requestItem = async (name) => {
         throw new Error(`Request failed: ${response.status}`);
     }
 
-    return response.json()
+    return await response.json();
 };
 
 
 const item = (name) => pipe(
-    TaskResult.fromThrowable(async () => await requestItem(name)),
+    TaskResult.fromThrowable(() => lookupItem(name)),
     TaskResult.mapError((err) => err.message),
     TaskResult.map((data) => data.products[0]),
     TaskResult.filterOrElse({
         predicate: (item) => item !== undefined,
-        onFalse: () => `${name} is not in stock`,
+        onFalse: () => `${name} was not found`,
     }),
     TaskResult.map((item) => item.title),
     TaskResult.match({
