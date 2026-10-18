@@ -52,7 +52,7 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           if [[ "$version" == *-* ]]; then
-            npm publish --tag next
+            npm stage publish --tag next
           else
-            npm publish
+            npm stage publish
           fi
