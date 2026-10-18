@@ -1,9 +1,10 @@
 {
   "name": "onlyfuncs",
-  "version": "0.0.0",
+  "description": "Lightweight library for functional programming",
+  "version": "0.1.0",
   "license": "MIT",
-  "private": true,
   "type": "module",
+  "repository": "https://github.com/devkyt/onlyfuncs",
   "scripts": {
     "test": "node --test"
   },
@@ -23,5 +24,8 @@
     "./semigroup": "./src/semigroup/index.js",
     "./monoid": "./src/monoid/index.js",
     "./validation": "./src/validation/index.js"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   }
 }
