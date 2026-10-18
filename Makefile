@@ -44,4 +44,5 @@ release:
 	npm run build --if-present
 	npm test
 	npm pack --dry-run
-	git push --atomic origin "HEAD:refs/heads/$$(git branch --show-current)" "refs/tags/$(VERSION)"
+	git tag "$(VERSION)"
+	git push origin "$(VERSION)"
