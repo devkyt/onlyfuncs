@@ -44,5 +44,4 @@ release:
 	npm run build --if-present
 	npm test
 	npm pack --dry-run
-	npm version "$(patsubst v%,%,$(VERSION))" -m "Release %s"
 	git push --atomic origin "HEAD:refs/heads/$$(git branch --show-current)" "refs/tags/$(VERSION)"
